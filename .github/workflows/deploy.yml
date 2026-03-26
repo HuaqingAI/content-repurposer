@@ -1,0 +1,50 @@
+name: Deploy to ECS
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build validation
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+          DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
+          NEXT_PUBLIC_SUPABASE_URL: "https://dummy.supabase.co"
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: "dummy"
+
+      - name: Deploy to ECS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.ECS_HOST }}
+          username: ${{ secrets.ECS_USER }}
+          key: ${{ secrets.ECS_SSH_KEY }}
+          script: |
+            cd ~/content-repurposer
+            git pull origin main
+            docker compose -f docker-compose.prod.yml up -d --build
+            # 健康检查（重试 5 次，间隔 10s）
+            for i in $(seq 1 5); do
+              sleep 10
+              curl -f http://localhost:3000/api/health && echo "Health check passed" && exit 0
+            done
+            echo "Health check failed" && exit 1

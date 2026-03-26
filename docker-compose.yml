@@ -1,0 +1,16 @@
+# docker-compose.yml — 本地开发模式（热更新）
+# 使用方式：docker compose up dev
+services:
+  dev:
+    build:
+      context: .
+      target: builder
+    command: npm run dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./prisma:/app/prisma
+    env_file:
+      - .env.local

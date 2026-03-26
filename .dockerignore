@@ -1,0 +1,13 @@
+.next/
+node_modules/
+.env.local
+.env.production
+_bmad-output/
+outputs/
+tmp/
+.git/
+.github/
+*.md
+.DS_Store
+coverage/
+.nyc_output/

@@ -1,0 +1,118 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// 枚举类型
+enum ContentType {
+  opinion    // 观点分析类
+  narrative  // 体验叙事类
+  tutorial   // 教程列表类
+  review     // 评测对比类
+  other      // 其他
+
+  @@map("content_type")
+}
+
+enum Platform {
+  xiaohongshu
+  wechat
+  zhihu
+
+  @@map("platform")
+}
+
+enum Tone {
+  casual    // 口语化
+  standard  // 标准
+  formal    // 正式
+
+  @@map("tone")
+}
+
+enum Feedback {
+  helpful
+  not_helpful
+
+  @@map("feedback")
+}
+
+// 用户表
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  phone        String?   @unique @db.VarChar(20)
+  wechatOpenid String?   @unique @map("wechat_openid") @db.VarChar(100)
+  displayName  String    @map("display_name") @db.VarChar(50)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  rewriteRecords RewriteRecord[]
+
+  @@index([createdAt], name: "idx_users_created_at")
+  @@map("users")
+}
+
+// 改写记录表
+model RewriteRecord {
+  id           String      @id @default(uuid()) @db.Uuid
+  userId       String      @map("user_id") @db.Uuid
+  originalText String      @map("original_text")
+  originalUrl  String?     @map("original_url") @db.VarChar(2048)
+  contentType  ContentType @map("content_type")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  metadata     Json?       @default("{}")
+
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  results RewriteResult[]
+
+  @@index([userId], name: "idx_rewrite_records_user_id")
+  @@index([createdAt], name: "idx_rewrite_records_created_at")
+  @@map("rewrite_records")
+}
+
+// 改写结果表
+model RewriteResult {
+  id            String    @id @default(uuid()) @db.Uuid
+  recordId      String    @map("record_id") @db.Uuid
+  platform      Platform
+  tone          Tone
+  body          String
+  titles        Json      @default("[]")
+  tags          Json      @default("[]")
+  hook          String    @default("")
+  apiModel      String    @map("api_model") @db.VarChar(100)
+  apiTokensUsed Int       @default(0) @map("api_tokens_used")
+  apiCostCents  Int       @default(0) @map("api_cost_cents")
+  apiDurationMs Int       @default(0) @map("api_duration_ms")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  feedback      Feedback?
+
+  record RewriteRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+
+  @@index([recordId], name: "idx_rewrite_results_record_id")
+  @@map("rewrite_results")
+}
+
+// 平台配置表
+model PlatformConfig {
+  id               String   @id @default(uuid()) @db.Uuid
+  platform         Platform
+  configVersion    Int      @map("config_version")
+  styleRules       Json     @map("style_rules")
+  promptTemplate   String   @map("prompt_template")
+  fewShotExamples  Json     @default("[]") @map("few_shot_examples")
+  isActive         Boolean  @default(false) @map("is_active")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  updatedBy        String?  @map("updated_by") @db.VarChar(100)
+
+  @@unique([platform, configVersion], name: "uq_platform_configs_platform_version")
+  @@index([platform, isActive], name: "idx_platform_configs_platform_active")
+  @@map("platform_configs")
+}
