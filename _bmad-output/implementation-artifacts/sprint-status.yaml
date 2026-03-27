@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-25
-last_updated: 2026-03-27  # 2-5-api-rate-limiting: done
+last_updated: 2026-03-27  # 4a-3-streaming-text-renderer: review
 
 project: content-repurposer
 project_key: NOKEY
@@ -63,19 +63,19 @@ development_status:
   epic-2-retrospective: optional
 
   # ── Epic 3：AI 改写引擎 ──────────────────────────────────────
-  epic-3: backlog
-  3-1-llm-provider-deepseek: backlog
-  3-2-qianwen-llm-router: backlog
-  3-3-prompt-assembler: backlog
+  epic-3: in-progress
+  3-1-llm-provider-deepseek: done
+  3-2-qianwen-llm-router: done
+  3-3-prompt-assembler: review
   3-4a-rewrite-sse-api: backlog
   3-4b-rewrite-record-cost-tracker: backlog
   epic-3-retrospective: optional
 
   # ── Epic 4a：改写输入体验 ────────────────────────────────────
-  epic-4a: backlog
-  4a-1-original-text-input: backlog
-  4a-2-platform-tone-selector: backlog
-  4a-3-streaming-text-renderer: backlog
+  epic-4a: in-progress
+  4a-1-original-text-input: done
+  4a-2-platform-tone-selector: done
+  4a-3-streaming-text-renderer: review
   4a-4-rewrite-workspace-state: backlog
   4a-5-error-recovery: backlog
   4a-6-url-extraction: backlog
@@ -90,9 +90,9 @@ development_status:
   epic-4b-retrospective: optional
 
   # ── Epic 5：历史记录 ─────────────────────────────────────────
-  epic-5: backlog
-  5-1-history-list-page: backlog
-  5-2-history-reuse: backlog
+  epic-5: in-progress
+  5-1-history-list-page: review
+  5-2-history-reuse: review
   epic-5-retrospective: optional
 
   # ── Epic 6：管理后台 ─────────────────────────────────────────
@@ -104,7 +104,7 @@ development_status:
   epic-6-retrospective: optional
 
   # ── Epic 7：落地页与增长入口 ─────────────────────────────────
-  epic-7: backlog
-  7-1-ssr-landing-page-seo: backlog
+  epic-7: in-progress
+  7-1-ssr-landing-page-seo: review
   7-2-guest-trial-onboarding: backlog
   epic-7-retrospective: optional
