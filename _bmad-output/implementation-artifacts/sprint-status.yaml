@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-25
-last_updated: 2026-03-26  # 2-4-user-settings-page: in-progress
+last_updated: 2026-03-27  # 2-5-api-rate-limiting: done
 
 project: content-repurposer
 project_key: NOKEY
@@ -58,8 +58,8 @@ development_status:
   2-1-phone-sms-auth: done
   2-2-wechat-oauth-login: done
   2-3-session-management: done
-  2-4-user-settings-page: in-progress
-  2-5-api-rate-limiting: backlog
+  2-4-user-settings-page: done
+  2-5-api-rate-limiting: done
   epic-2-retrospective: optional
 
   # ── Epic 3：AI 改写引擎 ──────────────────────────────────────

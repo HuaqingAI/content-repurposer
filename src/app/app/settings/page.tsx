@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { SettingsForm } from '@/features/settings/settings-form'
@@ -10,6 +11,9 @@ export const metadata: Metadata = {
 function maskPhone(phone: string): string {
   if (phone.length === 11) {
     return `${phone.slice(0, 3)}****${phone.slice(-4)}`
+  }
+  if (phone.length < 4) {
+    return '****'
   }
   return `${phone.slice(0, 2)}****${phone.slice(-2)}`
 }
@@ -24,7 +28,7 @@ export default async function SettingsPage() {
   if (!user) return null
 
   const dbUser = await prisma.user.findUnique({ where: { id: user.id } })
-  if (!dbUser) return null
+  if (!dbUser) redirect('/login')
 
   const maskedPhone = dbUser.phone ? maskPhone(dbUser.phone) : null
 
@@ -32,7 +36,7 @@ export default async function SettingsPage() {
     <SettingsForm
       displayName={dbUser.displayName ?? ''}
       maskedPhone={maskedPhone}
-      createdAt={dbUser.createdAt}
+      createdAt={dbUser.createdAt.toISOString()}
     />
   )
 }

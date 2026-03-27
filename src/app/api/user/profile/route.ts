@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 
 const UpdateProfileSchema = z.object({
-  displayName: z.string().min(1, '名称不能为空').max(50, '名称不超过 50 个字符'),
+  displayName: z.string().trim().min(1, '名称不能为空').max(50, '名称不超过 50 个字符'),
 })
 
 export async function PATCH(request: Request) {
@@ -45,7 +45,16 @@ export async function PATCH(request: Request) {
       data: { displayName: parsed.data.displayName },
     })
     return Response.json({ data: { userId: user.id }, error: null })
-  } catch {
+  } catch (error) {
+    console.error('[profile PATCH] Prisma update error:', error)
+    const isNotFound =
+      typeof error === 'object' && error !== null && (error as { code?: string }).code === 'P2025'
+    if (isNotFound) {
+      return Response.json(
+        { data: null, error: { code: 'USER_NOT_FOUND', message: '用户不存在' } },
+        { status: 404 }
+      )
+    }
     return Response.json(
       { data: null, error: { code: 'UPDATE_FAILED', message: '更新失败，请稍后重试' } },
       { status: 500 }

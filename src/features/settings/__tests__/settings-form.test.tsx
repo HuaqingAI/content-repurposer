@@ -101,10 +101,8 @@ describe('SettingsForm', () => {
   })
 
   it('displayName 为空时不提交，显示校验错误', async () => {
-    render(<SettingsForm {...defaultProps} />)
-
-    const input = screen.getByLabelText('显示名称')
-    fireEvent.change(input, { target: { value: '' } })
+    // 用空 displayName 渲染，直接触发 submit
+    render(<SettingsForm {...defaultProps} displayName="" />)
 
     fireEvent.click(screen.getByRole('button', { name: '保存' }))
 

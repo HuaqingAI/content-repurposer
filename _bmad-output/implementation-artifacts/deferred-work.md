@@ -73,3 +73,17 @@
 - /app 重定向目标可能形成多跳链（当 /app 本身再重定向时） [src/proxy.ts:49]：当前路由树无此问题，Epic 4a 新增路由时注意
 - /auth/* 路由未被 proxy 保护——OAuth 回调流程刻意不保护：设计意图，无需变更
 - proxy.test.ts matcher 测试未验证具体排除模式内容：当前验证粒度满足 AC，后续可加正则单测
+
+## Deferred from: code review of 2-4-user-settings-page (2026-03-26)
+
+## Deferred from: code review of 2-5-api-rate-limiting (2026-03-27)
+
+- **并发请求计数器竞态（多实例场景）**：JavaScript 单线程下 checkRateLimit 同步执行无实际竞态，但多 Docker 实例各自持有独立 Map，Post-MVP 迁移 Redis 时一并解决原子性问题 [src/lib/rate-limit.ts]
+- **501 桩响应仍消耗限流 token**：每个通过认证的请求消耗一个 token，即便返回 501，属桩阶段设计预期；Story 3.4a 替换实际 LLM 逻辑时评估是否需调整（如失败不计数） [src/app/api/rewrite/route.ts]
+- **请求体未校验——_request 参数未读取**：桩实现有意忽略 body，Story 3.4a 实现改写逻辑时须补充 body parse + validation（400 校验失败） [src/app/api/rewrite/route.ts]
+- **进程内 Map 不跨 Docker 实例共享**：多实例部署时每实例独立计数，用户可绕过限流；Dev Notes 明确记录为 MVP 单实例约束，多实例扩容时替换为 Redis（Upstash 或自建）[src/lib/rate-limit.ts]
+
+- PATCH /api/user/profile 缺乏 CSRF 防护（仅依赖 session cookie）[route.ts]：需统一决策——在中间件层（proxy.ts）或独立 API 安全层统一添加 Origin 校验，避免单点修复；建议在 Epic 5 安全加固阶段统一处理
+- maskPhone 对非 11 位号码（国际格式如 +86 开头 E.164）脱敏强度不足 [page.tsx:12-14]：本 Story 仅处理中国大陆 11 位手机号，Spec 未覆盖国际格式
+- 保存成功状态期间（3 秒内）提交按钮未禁用，可触发冗余 PATCH 请求 [settings-form.tsx:88-94]：不影响正确性，属 UX 优化，建议后续 Sprint 统一处理表单防重逻辑
+- createdAt 以 UTC 格式化显示，中国用户（UTC+8）午夜附近时段可能显示前一天日期 [settings-form.tsx:48]：Spec 未规定时区，当前 UTC 为全局一致选择，国际化需求出现前不处理
