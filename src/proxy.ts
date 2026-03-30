@@ -76,11 +76,17 @@ export async function proxy(request: NextRequest) {
       return redirectWithCookies(new URL('/login', request.url))
     }
     // 查询当前用户 role（使用 user session + RLS SELECT 策略 users_select_own）
-    const { data: userData } = await supabase
+    const { data: userData, error: roleError } = await supabase
       .from('users')
       .select('role')
       .eq('id', user.id)
       .single()
+
+    if (roleError) {
+      // 查询失败时拒绝访问（fail-safe），避免 DB 故障时意外放行非 admin
+      console.error('[proxy] role query error:', roleError.message)
+      return redirectWithCookies(new URL('/app', request.url))
+    }
 
     if (userData?.role !== 'admin') {
       return redirectWithCookies(new URL('/app', request.url))

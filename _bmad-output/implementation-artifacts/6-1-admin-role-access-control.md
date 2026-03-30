@@ -1,6 +1,6 @@
 # Story 6.1：管理员角色与访问控制
 
-Status: review
+Status: done
 
 ## Story
 
@@ -209,6 +209,16 @@ claude-sonnet-4-6
 - 管理后台 RLS SELECT 策略（`users_select_own`）为运维任务，未自动执行
 - proxy.test.ts 从 6 个测试扩展到 17 个，修复已有 307→302 断言错误（pre-existing bug in previous story）
 - 预先存在的 3 个 `route.test.ts` 失败（guest trial 功能）与本 story 无关，由 dev 分支未提交的其他 story 代码引起
+
+### Review Findings
+
+- [x] [Review][Patch] Supabase role 查询错误被静默丢弃，admin 用户遭误重定向到 /app [src/proxy.ts: admin block 4b] — 已修复：解构 `roleError`，失败时 console.error 记录并 fail-safe 重定向到 /app
+- [x] [Review][Patch] 已登录用户但 users 表无对应行时无测试覆盖 [src/__tests__/proxy.test.ts] — 已修复：新增"孤儿用户→/app"及"DB 查询失败→/app"两个测试用例；19 个测试全部通过
+- [x] [Review][Defer] `feedbackComment` 字段出现在 schema.prisma 但无对应已提交 migration [prisma/schema.prisma] — deferred, pre-existing，来自 story 4b-3，migration 文件本地存在但未提交
+- [x] [Review][Defer] RLS 未显式禁止用户 UPDATE 自身 role，理论可自升权限 — deferred, pre-existing，运维配置项，story 任务 3 已标注
+- [x] [Review][Defer] proxy.ts 与原始字符串 'admin' 比较而非 Prisma UserRole 枚举 [src/proxy.ts] — deferred, pre-existing，功能正确，类型安全优化项
+- [x] [Review][Defer] user.id 未做空值独立校验（依赖 Auth 框架保证）[src/proxy.ts] — deferred, pre-existing，过度防御，实际风险为零
+- [x] [Review][Defer] redirectWithCookies 将含 name/value 的 cookie 对象传入 options 参数 [src/proxy.ts] — deferred, pre-existing，已有模式，当前运行正常
 
 ### File List
 

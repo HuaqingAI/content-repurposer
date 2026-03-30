@@ -23,9 +23,17 @@ function createRequest(pathname: string): NextRequest {
   return new NextRequest(new URL(`http://localhost:3000${pathname}`))
 }
 
-/** 构建 supabase.from().select().eq().single() 链的 mock */
+/** 构建 supabase.from().select().eq().single() 链的 mock（成功路径） */
 function mockRoleQuery(role: string | null) {
-  const single = jest.fn().mockResolvedValue({ data: role ? { role } : null })
+  const single = jest.fn().mockResolvedValue({ data: role ? { role } : null, error: null })
+  const eq = jest.fn().mockReturnValue({ single })
+  const select = jest.fn().mockReturnValue({ eq })
+  mockFrom.mockReturnValue({ select })
+}
+
+/** 构建 supabase.from().select().eq().single() 链的 mock（查询失败路径） */
+function mockRoleQueryError(message: string) {
+  const single = jest.fn().mockResolvedValue({ data: null, error: { message } })
   const eq = jest.fn().mockReturnValue({ single })
   const select = jest.fn().mockReturnValue({ eq })
   mockFrom.mockReturnValue({ select })
@@ -146,6 +154,34 @@ describe('proxy - 路由守卫', () => {
       const req = createRequest('/app')
       const res = await proxy(req)
       expect(res.status).toBe(200)
+    })
+  })
+
+  describe('users 表无对应行（孤儿 Auth 用户）', () => {
+    beforeEach(() => {
+      mockGetUser.mockResolvedValue({ data: { user: { id: 'orphan-user' } } })
+      mockRoleQuery(null)
+    })
+
+    it('访问 /admin — 孤儿用户被重定向到 /app', async () => {
+      const req = createRequest('/admin')
+      const res = await proxy(req)
+      expect(res.status).toBe(302)
+      expect(res.headers.get('location')).toContain('/app')
+    })
+  })
+
+  describe('role 查询 DB 异常处理', () => {
+    beforeEach(() => {
+      mockGetUser.mockResolvedValue({ data: { user: { id: 'user-123' } } })
+      mockRoleQueryError('connection timeout')
+    })
+
+    it('访问 /admin — DB 查询失败时 fail-safe 重定向到 /app', async () => {
+      const req = createRequest('/admin')
+      const res = await proxy(req)
+      expect(res.status).toBe(302)
+      expect(res.headers.get('location')).toContain('/app')
     })
   })
 
