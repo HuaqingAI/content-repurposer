@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-25
-last_updated: 2026-03-27  # 4a-3-streaming-text-renderer: review
+last_updated: 2026-03-30  # 7-2-guest-trial-onboarding: review
 
 project: content-repurposer
 project_key: NOKEY
@@ -106,5 +106,5 @@ development_status:
   # ── Epic 7：落地页与增长入口 ─────────────────────────────────
   epic-7: in-progress
   7-1-ssr-landing-page-seo: review
-  7-2-guest-trial-onboarding: backlog
+  7-2-guest-trial-onboarding: review
   epic-7-retrospective: optional

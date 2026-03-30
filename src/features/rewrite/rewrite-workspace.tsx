@@ -60,6 +60,7 @@ export function RewriteWorkspace() {
   }
 
   const prefillDoneRef = useRef(false)
+  const [shouldAutoStart, setShouldAutoStart] = useState(false)
 
   useEffect(() => {
     if (prefillDoneRef.current) return
@@ -78,7 +79,40 @@ export function RewriteWorkspace() {
 
     const rawTone = searchParams.get('tone')
     if (rawTone && VALID_TONES.includes(rawTone as Tone)) setTone(rawTone as Tone)
+
+    // 若没有 searchParams 文本，检查 trial 预填
+    if (!rawText) {
+      try {
+        const trialRaw = localStorage.getItem('shiwen_trial_prefill')
+        if (trialRaw) {
+          localStorage.removeItem('shiwen_trial_prefill')
+          const { text: t, platform: p, tone: tn } = JSON.parse(trialRaw) as {
+            text?: unknown
+            platform?: unknown
+            tone?: unknown
+          }
+          if (typeof t === 'string' && [...t].length >= 50) {
+            setText([...t].slice(0, 5000).join(''))
+            if (typeof p === 'string' && VALID_PLATFORMS.includes(p as Platform))
+              setPlatforms([p as Platform])
+            if (typeof tn === 'string' && VALID_TONES.includes(tn as Tone))
+              setTone(tn as Tone)
+            setShouldAutoStart(true)
+          }
+        }
+      } catch {
+        /* ignore localStorage or parse errors */
+      }
+    }
   }, [searchParams, setText, setPlatforms, setTone])
+
+  useEffect(() => {
+    if (!shouldAutoStart) return
+    if (status !== 'idle') return
+    if ([...text].length < 50) return
+    setShouldAutoStart(false)
+    startStream()
+  }, [shouldAutoStart, status, text, startStream])
 
   const charCount = useMemo(() => [...text].length, [text])
   const isTextValid = charCount >= 50 && charCount <= 5000

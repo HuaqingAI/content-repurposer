@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { TrialWidget } from '@/features/rewrite/trial-widget'
 
 export const metadata: Metadata = {
   title: '适文 - 小红书文章改写成公众号 | AI 多平台内容适配',
@@ -39,6 +40,9 @@ export default function HomePage() {
         >
           免费试用
         </Link>
+        <div className="mt-10 w-full max-w-2xl">
+          <TrialWidget />
+        </div>
       </section>
 
       {/* Platforms */}
