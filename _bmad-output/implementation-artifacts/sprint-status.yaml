@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-25
-last_updated: 2026-03-30  # 6-1-admin-role-access-control: review
+last_updated: 2026-03-30  # 4b-3-editable-result: done; 6-1-admin-role-access-control: review
 
 project: content-repurposer
 project_key: NOKEY
@@ -85,7 +85,7 @@ development_status:
   epic-4b: in-progress
   4b-1-content-package-display: done
   4b-2-one-click-copy: done
-  4b-3-editable-result: in-progress
+  4b-3-editable-result: done
   4b-4-feedback-rewrite: done
   epic-4b-retrospective: optional
 
