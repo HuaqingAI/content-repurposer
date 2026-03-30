@@ -1,6 +1,92 @@
 import 'server-only'
 import { prisma } from '@/lib/prisma'
-import { Feedback } from '@/generated/prisma/enums'
+import { Feedback, Platform } from '@/generated/prisma/enums'
+
+// ── 用户管理 ──────────────────────────────────────────────────────
+
+export type UserListItem = {
+  id: string
+  phone: string | null        // 脱敏后（138****1234）
+  displayName: string
+  role: string
+  isBanned: boolean
+  createdAt: Date
+  rewriteCount: number
+  lastActiveAt: Date | null
+}
+
+/** 手机号脱敏：保留前3位和后4位，中间替换为 ****
+ *  - 长度 < 7 位时无法有效脱敏，返回 '***' 避免泄露原始值
+ *  - phone 为 null 时原样返回
+ */
+function maskPhone(phone: string | null): string | null {
+  if (!phone) return phone
+  if (phone.length < 7) return '***'
+  return phone.slice(0, 3) + '****' + phone.slice(-4)
+}
+
+export async function getUserList(options: {
+  search?: string
+  skip?: number
+  take?: number
+}): Promise<{ users: UserListItem[]; total: number }> {
+  // 空字符串 search 应视为无过滤条件
+  const trimmedSearch = options.search?.trim()
+  const where = trimmedSearch ? { phone: { startsWith: trimmedSearch } } : {}
+
+  const [rawUsers, total] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        phone: true,
+        displayName: true,
+        role: true,
+        isBanned: true,
+        createdAt: true,
+        // 用 _count 聚合改写次数，避免加载全量记录
+        _count: { select: { rewriteRecords: true } },
+        // 只取最近一条用于 lastActiveAt
+        rewriteRecords: {
+          select: { createdAt: true },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: options.skip ?? 0,
+      take: options.take ?? 20,
+    }),
+    prisma.user.count({ where }),
+  ])
+
+  const users: UserListItem[] = rawUsers.map((u) => ({
+    id: u.id,
+    phone: maskPhone(u.phone),
+    displayName: u.displayName,
+    role: u.role,
+    isBanned: u.isBanned,
+    createdAt: u.createdAt,
+    rewriteCount: u._count.rewriteRecords,
+    lastActiveAt: u.rewriteRecords[0]?.createdAt ?? null,
+  }))
+
+  return { users, total }
+}
+
+export async function toggleUserBan(
+  userId: string,
+  banned: boolean
+): Promise<{ id: string; isBanned: boolean }> {
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: { isBanned: banned },
+    select: { id: true, isBanned: true },
+  })
+  return updated
+}
+
+// ── 仪表盘统计 ────────────────────────────────────────────────────
 
 export type DateRange = 'today' | '7d' | '30d'
 
@@ -86,5 +172,88 @@ export async function getDashboardStats(range: DateRange): Promise<DashboardStat
     totalApiCalls,
     totalCostYuan,
     satisfactionRate,
+  }
+}
+
+// ── 平台配置管理 ──────────────────────────────────────────────────
+
+export type PlatformConfigItem = {
+  id: string
+  platform: string
+  configVersion: number
+  styleRules: unknown
+  promptTemplate: string
+  fewShotExamples: unknown
+  isActive: boolean
+  updatedAt: Date
+  updatedBy: string | null
+}
+
+export async function getPlatformConfigs(): Promise<PlatformConfigItem[]> {
+  const configs = await prisma.platformConfig.findMany({
+    where: { isActive: true },
+    orderBy: { platform: 'asc' },
+  })
+  return configs.map((c) => ({
+    id: c.id,
+    platform: c.platform,
+    configVersion: c.configVersion,
+    styleRules: c.styleRules,
+    promptTemplate: c.promptTemplate,
+    fewShotExamples: c.fewShotExamples,
+    isActive: c.isActive,
+    updatedAt: c.updatedAt,
+    updatedBy: c.updatedBy,
+  }))
+}
+
+export async function updatePlatformConfig(
+  platform: Platform,
+  fields: {
+    styleRules: unknown
+    promptTemplate: string
+    fewShotExamples: unknown
+  },
+  updatedBy: string
+): Promise<PlatformConfigItem> {
+  // 使用交互式事务将版本号查询与写入包在同一事务中，避免并发时版本号冲突
+  const newConfig = await prisma.$transaction(async (tx) => {
+    // 查当前最大版本号（含非激活版本）
+    const maxVersionResult = await tx.platformConfig.aggregate({
+      where: { platform },
+      _max: { configVersion: true },
+    })
+    const nextVersion = (maxVersionResult._max.configVersion ?? 0) + 1
+
+    // 停用旧激活版本
+    await tx.platformConfig.updateMany({
+      where: { platform, isActive: true },
+      data: { isActive: false },
+    })
+
+    // 创建新版本
+    return tx.platformConfig.create({
+      data: {
+        platform,
+        configVersion: nextVersion,
+        styleRules: fields.styleRules as Record<string, unknown>,
+        promptTemplate: fields.promptTemplate,
+        fewShotExamples: fields.fewShotExamples as Record<string, unknown>[],
+        isActive: true,
+        updatedBy,
+      },
+    })
+  })
+
+  return {
+    id: newConfig.id,
+    platform: newConfig.platform,
+    configVersion: newConfig.configVersion,
+    styleRules: newConfig.styleRules,
+    promptTemplate: newConfig.promptTemplate,
+    fewShotExamples: newConfig.fewShotExamples,
+    isActive: newConfig.isActive,
+    updatedAt: newConfig.updatedAt,
+    updatedBy: newConfig.updatedBy,
   }
 }

@@ -51,6 +51,14 @@ jest.mock('@/lib/llm/content-type-parser', () => ({
   parseContentType: jest.fn().mockReturnValue('opinion'),
 }))
 
+jest.mock('@/lib/prisma', () => ({
+  prisma: {
+    user: {
+      findUnique: jest.fn(),
+    },
+  },
+}))
+
 import { POST } from '../route'
 import { createClient } from '@/lib/supabase/server'
 import { checkRateLimit, checkIpRateLimit } from '@/lib/rate-limit'
