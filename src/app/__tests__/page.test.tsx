@@ -22,9 +22,10 @@ describe('HomePage', () => {
 
   it('renders all three platform names', () => {
     render(<HomePage />)
-    expect(screen.getByText('小红书')).toBeInTheDocument()
-    expect(screen.getByText('微信公众号')).toBeInTheDocument()
-    expect(screen.getByText('知乎')).toBeInTheDocument()
+    // TrialWidget also shows platform buttons, so multiple elements exist — use getAllByText
+    expect(screen.getAllByText('小红书').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('微信公众号').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('知乎').length).toBeGreaterThanOrEqual(1)
   })
 
   it('renders feature titles', () => {
