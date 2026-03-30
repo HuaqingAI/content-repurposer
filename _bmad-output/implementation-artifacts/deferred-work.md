@@ -87,3 +87,17 @@
 - maskPhone 对非 11 位号码（国际格式如 +86 开头 E.164）脱敏强度不足 [page.tsx:12-14]：本 Story 仅处理中国大陆 11 位手机号，Spec 未覆盖国际格式
 - 保存成功状态期间（3 秒内）提交按钮未禁用，可触发冗余 PATCH 请求 [settings-form.tsx:88-94]：不影响正确性，属 UX 优化，建议后续 Sprint 统一处理表单防重逻辑
 - createdAt 以 UTC 格式化显示，中国用户（UTC+8）午夜附近时段可能显示前一天日期 [settings-form.tsx:48]：Spec 未规定时区，当前 UTC 为全局一致选择，国际化需求出现前不处理
+
+## Deferred from: code review of 6-2-system-dashboard (2026-03-30)
+
+- **satisfactionRate 并发查询竞态**：`helpfulCount` 与 `totalFeedback` 来自两次独立 Prisma 查询，并发反馈写入可能导致 `helpfulCount > totalFeedback`（满意率 >100%）；预期写入频率低，MVP 阶段风险可接受；如需修复可改用数据库事务或 `$queryRaw` 单查询
+- **proxy.ts roleError 重定向无用户反馈**：DB 查询失败时 admin 被静默重定向到 `/app`，无法区分权限不足与基础设施故障；需独立 UX story 或统一错误页支持
+- **DAU groupBy 内存压力**：`prisma.rewriteRecord.groupBy({ by: ['userId'] })` 将所有去重 userId 加载到 Node.js 内存；当前用户规模无影响，百万级用户时建议改用 `COUNT(DISTINCT userId)` raw query
+
+## Deferred from: code review of 6-1-admin-role-access-control (2026-03-30)
+
+- **`feedbackComment` 字段在 schema.prisma 无已提交 migration** [prisma/schema.prisma]：来自 story 4b-3，migration 文件（20260330000001_add_feedback_comment）本地存在但未提交到 story 分支；需确认是否需补提
+- **RLS 未显式禁止用户 UPDATE 自身 role** [Supabase Dashboard]：运维配置项，story 任务 3 已标注；部署前需在 Supabase Dashboard 确认 `users` 表无 `UPDATE` 策略或策略已排除 `role` 列
+- **proxy.ts 用原始字符串 'admin' 而非 Prisma UserRole 枚举** [src/proxy.ts]：功能正确，类型安全优化；Prisma enum 导入在 proxy.ts 中可行，后续重构时考虑
+- **user.id 未做空值独立校验** [src/proxy.ts]：Supabase Auth 保证 user.id 非空，实际风险为零；过度防御，暂缓
+- **redirectWithCookies 将含 name/value 的 cookie 对象传入 options 参数** [src/proxy.ts]：pre-existing 模式（Story 2.3），当前运行正常，如遇 cookie 相关问题时排查

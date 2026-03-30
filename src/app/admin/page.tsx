@@ -1,3 +1,10 @@
+import DashboardStats from '@/features/admin/dashboard-stats'
+
 export default function AdminPage() {
-  return <div className="text-gray-600">仪表盘（开发中）</div>
+  return (
+    <div>
+      <h1 className="text-lg font-semibold text-gray-800 mb-6">系统仪表盘</h1>
+      <DashboardStats />
+    </div>
+  )
 }
