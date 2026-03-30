@@ -91,9 +91,11 @@ function sleep(ms: number): Promise<void> {
 }
 
 function splitIntoChunks(text: string, chunkSize: number): string[] {
+  // P8: 使用 spread 展开 Unicode code point，避免 emoji/多字节字符被劈开
+  const codePoints = [...text];
   const chunks: string[] = [];
-  for (let i = 0; i < text.length; i += chunkSize) {
-    chunks.push(text.slice(i, i + chunkSize));
+  for (let i = 0; i < codePoints.length; i += chunkSize) {
+    chunks.push(codePoints.slice(i, i + chunkSize).join(''));
   }
   return chunks;
 }
@@ -103,32 +105,35 @@ export async function POST() {
 
   const stream = new ReadableStream({
     async start(controller) {
+      // P7: 用 closed 标志防止 finally 关闭后 catch 块再次 enqueue
+      let closed = false;
       try {
         for await (const chunk of generateStream()) {
           controller.enqueue(encoder.encode(chunk));
         }
       } catch (err) {
-        const errorMsg = encodeSSE("error", {
-          message: err instanceof Error ? err.message : "未知错误",
-          retryable: false,
-        });
-        controller.enqueue(encoder.encode(errorMsg));
+        if (!closed) {
+          const errorMsg = encodeSSE("error", {
+            message: err instanceof Error ? err.message : "未知错误",
+            retryable: false,
+          });
+          controller.enqueue(encoder.encode(errorMsg));
+        }
       } finally {
+        closed = true;
         controller.close();
       }
     },
   });
 
+  // P12: 同源 API 路由不需要 CORS 头，移除 Access-Control-Allow-Origin: *
   return new Response(stream, {
     headers: {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
       Connection: "keep-alive",
-      "Access-Control-Allow-Origin": "*",
     },
   });
 }
 
-export async function GET() {
-  return POST();
-}
+// P13: 移除 GET handler — mock 端点仅支持 POST，与架构约束一致（SSE via fetch POST）
