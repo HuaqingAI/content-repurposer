@@ -1,0 +1,37 @@
+# 使用阿里云 ACK 的 Nginx Ingress Controller
+# 需提前安装 cert-manager 来自动签发 HTTPS 证书
+# 或者直接在阿里云 CLB/ALB 上配置 SSL 证书
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: content-repurposer
+  namespace: content-repurposer
+  labels:
+    app: content-repurposer
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    # 自动申请 Let's Encrypt 证书（需 cert-manager）
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    # HTTP 强制跳转 HTTPS
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # 请求大小限制（适文场景原文可能较长）
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    # 超时设置（AI 改写接口响应较慢）
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+spec:
+  tls:
+    - hosts:
+        - your-domain.com   # 替换为实际域名
+      secretName: content-repurposer-tls
+  rules:
+    - host: your-domain.com   # 替换为实际域名
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: content-repurposer
+                port:
+                  number: 80

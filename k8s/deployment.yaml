@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: content-repurposer
+  namespace: content-repurposer
+  labels:
+    app: content-repurposer
+  annotations:
+    description: "适文 AI 内容改写助手"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: content-repurposer
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: content-repurposer
+    spec:
+      serviceAccountName: content-repurposer-sa
+      # 非 root 运行，与 Dockerfile 一致（uid 1001）
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      containers:
+        - name: content-repurposer
+          # 替换为实际 ACR 镜像地址，例如：
+          # registry.cn-hangzhou.aliyuncs.com/your-namespace/content-repurposer:latest
+          image: registry.cn-hangzhou.aliyuncs.com/REPLACE_NAMESPACE/content-repurposer:REPLACE_TAG
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              name: http
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false   # Next.js standalone 需要写 /tmp
+            capabilities:
+              drop: ["ALL"]
+          # 非敏感配置从 ConfigMap 读取
+          envFrom:
+            - configMapRef:
+                name: content-repurposer-config
+          # 敏感配置从 Secret 读取
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: content-repurposer-secret
+                  key: DATABASE_URL
+            - name: DIRECT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: content-repurposer-secret
+                  key: DIRECT_URL
+            - name: SUPABASE_SERVICE_ROLE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: content-repurposer-secret
+                  key: SUPABASE_SERVICE_ROLE_KEY
+            - name: DEEPSEEK_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: content-repurposer-secret
+                  key: DEEPSEEK_API_KEY
+            - name: QWEN_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: content-repurposer-secret
+                  key: QWEN_API_KEY
+            - name: WECHAT_APP_ID
+              valueFrom:
+                secretKeyRef:
+                  name: content-repurposer-secret
+                  key: WECHAT_APP_ID
+            - name: WECHAT_APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: content-repurposer-secret
+                  key: WECHAT_APP_SECRET
+      # 阿里云 ACR 私有镜像拉取凭证（需提前创建）
+      imagePullSecrets:
+        - name: acr-secret

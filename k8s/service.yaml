@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: content-repurposer
+  namespace: content-repurposer
+  labels:
+    app: content-repurposer
+spec:
+  type: ClusterIP
+  selector:
+    app: content-repurposer
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 3000
