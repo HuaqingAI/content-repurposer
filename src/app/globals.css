@@ -10,6 +10,16 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* 适文品牌 token */
+  --color-accent: #3d6b4f;
+  --color-accent-hover: #2f5640;
+  --color-accent-light: #e8f2ec;
+  --color-surface-2: #f9f8f5;
+  --color-border-default: #e8e5de;
+  --color-border-focus: #a0998a;
+  --color-text-secondary: #6b6560;
+  --color-text-caption: #a09890;
 }
 
 @media (prefers-color-scheme: dark) {

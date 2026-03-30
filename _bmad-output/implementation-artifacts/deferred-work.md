@@ -87,3 +87,127 @@
 - maskPhone 对非 11 位号码（国际格式如 +86 开头 E.164）脱敏强度不足 [page.tsx:12-14]：本 Story 仅处理中国大陆 11 位手机号，Spec 未覆盖国际格式
 - 保存成功状态期间（3 秒内）提交按钮未禁用，可触发冗余 PATCH 请求 [settings-form.tsx:88-94]：不影响正确性，属 UX 优化，建议后续 Sprint 统一处理表单防重逻辑
 - createdAt 以 UTC 格式化显示，中国用户（UTC+8）午夜附近时段可能显示前一天日期 [settings-form.tsx:48]：Spec 未规定时区，当前 UTC 为全局一致选择，国际化需求出现前不处理
+
+## Deferred from: code review of 3-1-llm-provider-deepseek (2026-03-27)
+
+- **max_tokens: 4096 硬编码不可覆盖** [deepseek.ts:93]：Story 3.3 prompt assembler 负责构建请求参数，届时统一配置 max_tokens
+- **SSE event: 类型行未处理** [deepseek.ts:31]：DeepSeek API 不使用 event: 行，非当前场景需求，如接入其他 SSE 服务时处理
+- **30s 超时对长文章生成可能不足** [deepseek.ts:74]：DeepSeek 流式约 30-50 tokens/s，5000 tokens 需 100s+；当前 30s 超时覆盖连接+传输全程，可接受 MVP 限制；后续改为 idle 超时（无数据 N 秒触发）
+- **单例 deepseekProvider 在 API Key 轮换时需重启服务** [deepseek.ts:129]：架构决策，密钥泄漏紧急轮换场景需重启容器；可接受，多实例部署时注意
+
+## Deferred from: code review of 4a-1-original-text-input (2026-03-27)
+
+- **disabled 按钮无 ARIA 无障碍说明** [src/app/app/page.tsx]：占位页面，Story 4a.4 实现真实改写工作区布局时一并补充 aria-describedby 或 tooltip 说明禁用原因
+- **Auto-grow useEffect 每次 keystroke 强制 layout thrash** [src/features/rewrite/text-input.tsx]：先设 height=auto 触发强制回流再测量 scrollHeight，属已知模式；MVP 阶段用户内容量有限，性能影响可忽略；如需优化可改用 ResizeObserver
+
+## Deferred from: code review of 4a-2-platform-tone-selector (2026-03-27)
+
+- **disabled 未从父组件传递给 PlatformSelector/ToneSelector**：提交态下子组件无法禁用交互，属改写 API 集成（Story 3.4a）范畴，届时父组件须将 `isSubmitting` 传入 `disabled` prop
+- **isTextValid 未向用户展示，"开始改写"按钮静默禁用无计数反馈**：字符计数显示属 TextInput (Story 4a.1) 或改写工作区状态 (Story 4a.4) 职责范围，届时在按钮旁或输入框下方显示字数提示
+
+## Deferred from: code review of 3-2-qianwen-llm-router (2026-03-27)
+
+- **多行 SSE data 字段未合并** [qwen.ts:parseSSEStream]：SSE spec 允许多行 data 字段，但 OpenAI-compatible API（包括通义千问 DashScope 兼容模式）实际均使用单行 JSON，无实际影响；如接入非标准 SSE 服务时处理
+
+## Deferred from: code review of 3-3-prompt-assembler (2026-03-27)
+
+- **W1: PLATFORM_LABELS/TONE_LABELS 无未知枚举值兜底** [prompt-assembler.ts:45-46]：TypeScript 编译期已通过 `Record<Platform, string>` 保证穷举，仅在运行时绕过类型系统时（如 `as Platform`）有风险；如后续新增平台枚举时须同步更新映射表
+- **W2: styleRules 为空数组时产生空"规则："段落** [prompt-assembler.ts:40]：属 DB 数据质量问题，空规则是否合法需业务侧决策；可在管理后台编辑器（Story 6.4）加非空校验
+
+## Deferred from: code review of 5-1-history-list-page (2026-03-27)
+
+- **page 参数无上界**：极大 page 值（如 page=9999999）触发 `OFFSET 199999980` 全表扫描，低优先级性能优化，可在 API 安全加固阶段统一处理
+- **results 为空时 tone 静默降级为 'standard'**：handleReuse 中 `results[0]?.tone ?? 'standard'`，空结果时使用默认值，可接受行为；如需精确还原历史配置，届时改为记录 tone 快照至 rewrite_record
+- **originalText 运行时 null 抛错**：DB 非空约束已保证此字段不为 null，实际风险为零；Prisma 迁移脚本出错时的极端兜底场景，无需现在处理
+- **展开/收起按钮文案不对称**：`history-detail-modal.tsx` 中 "收起标题/标签" vs "展开标题/标签/引导语"，NITPICK，UX 统一时处理
+
+## Deferred from: code review of 5-2-history-reuse (2026-03-27)
+
+- **`/api/mock-rewrite` stub，request body 未含 text/platforms/tone**：Epic 4a Story 3.4a 替换为真实 SSE API 时须补充 request body 构建逻辑 [src/app/app/page.tsx:startRewrite]
+- **SSE stream 未 abort on unmount/重新触发**：用户导航离开或再次点击"开始改写"时旧 while(true) 读循环继续运行；Story 3.4a 实现真实 SSE 时须添加 AbortController + reader.cancel() [src/app/app/page.tsx:startRewrite]
+- **`done` SSE event 未 break 读循环**：服务端发送 done 后客户端继续轮询直至 TCP 关闭；3.4a 修复 [src/app/app/page.tsx:119]
+- ~~**`activeTab`/`isDone` 重跑间未正确重置**：平台/语气变更后 isDone 仍为 true 显示旧按钮文案~~ **已在 4a-4 修复**：Zustand store `setPlatforms`/`setTone` 在 `status===complete` 时自动重置为 `idle`
+- **错误后 streamingTexts 残留旧内容**：重试时旧内容 flash 后消失；3.4a/4a 错误处理重构时处理 [src/app/app/page.tsx]
+- **TextDecoder 未调用最终 flush**：`decoder.decode()` 无参调用缺失，尾部多字节边界字节静默丢弃；3.4a 实现时补充 [src/app/app/page.tsx:88]
+- **卡片复用截断上限 1500 字 ≠ spec 5000 字**：URL 安全权衡有意为之（5000 CJK 字符编码后约 45KB 远超 URL 安全上限）；长文场景建议改用 `localStorage` 或服务端临时 key 传递原文 [src/features/history/history-record-card.tsx]
+
+## Deferred from: code review of 3-4b-rewrite-record-cost-tracker (2026-03-27)
+
+- **usage.totalTokens 为 NaN/Infinity**：LLM provider 返回畸形 usage 对象时 calculateCostCents 产生 NaN，Prisma 写入 apiCostCents 报错；可在 cost-tracker 入口添加 isFinite 校验
+- **VALID_PLATFORMS 与 Prisma Platform 枚举漂移**：route.ts 本地 `readonly string[]` 与 Prisma 生成的枚举无编译期绑定，新增平台时需手动同步
+- **x-forwarded-for 可被伪造绕过 IP 限流**：getClientIp 直接信任客户端 header，需在 nginx/ALB 层覆写或仅使用最后一个跳点 IP
+- **rawLLMOutput 全量驻留内存**：每个平台的完整 LLM 原始输出保留至请求结束，5000 字上限下影响有限，但多平台并发场景可评估是否只保留 parseContentType 所需的前 N 字节
+
+## Deferred from: code review of 4a-4-rewrite-workspace-state (2026-03-27)
+
+- **chunk 早于 platform_start 到达时内容静默丢弃** [use-rewrite-stream.ts:60-63]：SSE TCP 顺序保证，服务端协议 bug 场景，mock API 不涉及；真实 API 若出现乱序可在此处添加 chunk 缓冲队列
+- **prefillDoneRef 与 searchParams 依赖冲突** [rewrite-workspace.tsx:42-59]：一次性预填语义有意为之，防止用户交互后 URL 参数覆盖输入；若需支持 SPA 路由切换时重新预填，可将 prefillDone 移入 store 或改用 key={pathname} 重建组件
+- **VALID_PLATFORMS 在两文件中重复定义**：use-rewrite-stream.ts 和 rewrite-workspace.tsx 各自定义常量；后续重构时提取到 src/features/rewrite/constants.ts 共享
+- **streamError banner 与 hasResults 区域短暂同时显示** [rewrite-workspace.tsx:85-125]：React 19 批处理后消失，极短 UI 闪烁；如需彻底消除可添加 `!streamError &&` 条件到 hasResults 展示块
+- **fetch('/api/mock-rewrite') 未携带 request body** [use-rewrite-stream.ts:17]：mock API 设计如此，接入真实 SSE API（Story 3.4a/后续集成）时须添加 `body: JSON.stringify({ text, platforms, tone })`，并补充 Content-Type 头
+
+## Deferred from: code review of 4a-3-streaming-text-renderer (2026-03-27)
+
+- **Mock 端点无鉴权校验** [src/app/api/mock-rewrite/route.ts]：鉴权在 middleware 层（Story 2.3 已实现），mock 端点通过 proxy 保护；替换为真实 API 时鉴权天然覆盖
+- **`streamError` 渲染服务端文字未做内容过滤** [src/app/app/page.tsx]：React 已转义 HTML，当前为内部可控 API，无 XSS 风险；接入用户自定义 SSE 服务时重新评估
+- **`StreamingText` text 为纯空白时"生成中..."占位符不显示** [src/features/rewrite/streaming-text.tsx]：当前业务不产生纯空白输入，边界 UX 可后续处理
+
+## Deferred from: code review of 7-1-ssr-landing-page-seo (2026-03-27)
+
+- **根 layout `lang="en"` 与全中文内容不符** [src/app/layout.tsx:27]：`<html lang="en">` 导致屏幕阅读器误读中文，Google 语言检测与属性冲突；落地页公开后影响加大，建议改为 `lang="zh-CN"`，属预存在问题
+- **`proxy.ts` 未作为 Next.js middleware 生效，`/app/*` 路由无服务端鉴权保护** [src/proxy.ts]：middleware 必须位于 `src/middleware.ts`，当前文件为死代码，`middleware-manifest.json` 确认 `"middleware": {}` 为空；属预存在问题，需独立 Story 修复
+- **AC1 LCP < 2s 依赖 CDN 配置无法从代码层验证**：SSR 已正确实现，CDN/缓存头配置属运维范畴，需在部署验证阶段确认
+- **`<br />` 硬换行在极窄屏幕（≤320px 或高倍缩放）下布局不稳定** [src/app/page.tsx:33]：`max-w-md` 大多数场景可缓解，极端缩放下视觉异常，低优先级
+- **CTA 按钮缺少 `motion-safe:` 前缀** [src/app/page.tsx:38,81]：`transition-colors` 未适配 `prefers-reduced-motion`，无障碍增强项，非功能缺陷
+
+## Deferred from: code review of 4a-6-url-extraction (2026-03-29)
+
+- **正则在嵌套 HTML 中截断内容**：wechat-parser.ts 和 zhihu-parser.ts 的 `([\s\S]*?)<\/div>` lazy 匹配在第一个内层 `</div>` 截断；xiaohongshu-parser.ts 的 `([\s\S]*?)<\/` 更粗糙；需引入 HTML 解析库才能根本解决，与 spec "精简依赖" 约束冲突，暂缓
+- **`stripHtml`/`BROWSER_HEADERS` 三个 parser 重复定义**：DRY 问题，建议提取到 `src/lib/url-extractor/utils.ts`，功能无误，低优先级
+- **`request.signal` 未传给 `extractUrl`**：`route.ts` 创建独立的 `AbortSignal.timeout`，客户端断连时服务端 upstream fetch 继续运行最多 10 秒；资源浪费但功能正常
+- **内存限流在多实例部署下可绕过**：pre-existing 问题，来自 Story 2-5，Redis 迁移时一并解决
+- **`res.text()` 无响应体大小限制**：理论上超大响应会占用内存，目标平台文章页面通常在合理范围内
+
+## Deferred from: code review of 4b-1-content-package-display (2026-03-29)
+
+- **Array element type validation 缺失**：`use-rewrite-stream.ts` 中 `data.titles as string[]` / `data.tags as string[]` 仅验证是数组，未验证每个元素为字符串；服务端返回非字符串元素时直接渲染，风险低（API 可控），后续加固时统一处理
+- **`key={i}` 反模式**：`content-package.tsx` 中 titles/tags 列表使用数组索引作为 key；本场景为一次性到达非增量流式数据，实际无 reconciliation 问题，DRY 重构时统一改为稳定 key
+- **空字符串/纯空白 tag 渲染为空 pill**：`content-package.tsx` 中 `#{tag}` 无内容时会渲染仅含 `#` 的 pill；属服务端数据质量问题，Story 4b-2 实现一键复制时可顺便添加 `tag.trim()` 过滤
+
+## Deferred from: code review of 4b-2-one-click-copy (2026-03-29)
+
+- **数组下标 key={i} 导致 CopyButton 状态误归属** [content-package.tsx:39,61]：streaming 更新时 index key 不稳定，可能将"已复制 ✓"状态归到错误条目；pre-existing（4b-1 已记录），DRY 重构时统一改为稳定 key
+- **disabled button + onClick=undefined 逻辑冗余** [content-package.tsx:104]：disabled 已阻止 click 事件，onClick=undefined 叠加无 bug 但语义混淆；维护时注意两者皆需保留或改用单一机制
+- **titles/tags 含空字符串元素时渲染空行并产生格式异常 copyText**：服务端应在 Story 3.x 数据清洗层过滤空字符串，客户端可加 tag.trim() 防御
+- **fake timers afterEach 恢复时 pending callback 潜在测试间干扰** [copy-button.test.tsx:21-23]：当前运行稳定，如遇 flaky 可在 afterEach 中先 jest.runAllTimers() 再 useRealTimers()
+
+## Deferred from: code review of 4b-3-editable-result (2026-03-30)
+
+- **空字符串 tags/titles 元素渲染空白 pill 和空行**：`isEmpty` 仅检测数组长度，不过滤空字符串元素；服务端数据清洗层（Story 3.x）处理，客户端可加 `.filter(t => t.trim())` 防御 [content-package.tsx:86-101]
+- **纯空白 hook 渲染空段落**：`isEmpty={!hook}` 仅检测 falsy，不 trim；`' '` 通过检测并渲染空白段落，服务端数据质量问题 [content-package.tsx:110-113]
+- **CollapsibleSection button `disabled` 与 `onClick=undefined` 逻辑冗余**：`disabled` 已阻止 click，叠加 `onClick=undefined` 语义混淆；pre-existing，4b-2 已记录 [content-package.tsx:135-137]
+- **`key={i}` 数组索引**：pre-existing，4b-1/4b-2 已记录，DRY 重构时统一改为稳定 key [content-package.tsx:72,94]
+- **`isEmpty=true` 时无 `aria-busy` 属性**：屏幕阅读器无法感知内容仍在生成；CollapsibleSection 无障碍完善阶段处理 [content-package.tsx:146]
+- **CollapsibleSection 缺少 `aria-expanded`**：辅助技术无法感知展开/折叠状态；无障碍完善阶段处理 [content-package.tsx:135]
+- **CollapsibleSection `isOpen` 不随 `isEmpty` 反转重置**：二次改写重置数据后区域可能意外展开；pre-existing，数据生命周期管理阶段处理 [content-package.tsx:165]
+- **测试 `toHaveLength(3/2)` 硬编码**：新增可折叠区域时批量失败；pre-existing 测试脆弱性，重构测试时统一处理 [content-package.test.tsx:18,42,73]
+
+## Deferred from: code review of 4a-5-error-recovery (2026-03-27)
+
+- **VALID_PLATFORMS 两文件重复定义** [use-rewrite-stream.ts:5, rewrite-workspace.tsx:12]：平台新增时需同步两处，Story 已注明可选提取到 constants.ts，优先级低
+- **buffer 无上限，恶意/故障服务器持续发送无 \n\n 分隔符的数据可致内存耗尽** [use-rewrite-stream.ts:读循环]：安全加固项，超出本 story 范围，建议后续添加 maxBufferSize 熔断
+- **retryable:false 时直接透传 SSE data.message 到 UI，建议增加长度截断或前端白名单** [use-rewrite-stream.ts:109-114]：由规范定义，服务端负责提供用户友好文案；若担忧服务端安全可在前端加 slice(0, 200) 防护
+- **无流式请求超时机制，服务端挂起可致 UI 永久卡在改写中** [use-rewrite-stream.ts:startStream]：可用 AbortController + setTimeout 实现，超出本 story 范围
+- **平台 tab 基于用户选择渲染而非实际数据可用性，无数据 tab 显示空白无提示** [rewrite-workspace.tsx:103-119]：UX 优化项，不影响当前 AC，可在 Epic 4b 输出体验中统一处理
+
+## Deferred from: code review of 4b-4-feedback-rewrite (2026-03-30)
+
+- **getClientIp 信任 x-forwarded-for 最左 IP 可被伪造绕过试用限流** [route.ts: getClientIp]：需在 nginx/ALB 层覆写或仅使用最后一跳 IP，pre-existing 问题（已在 3-4b review 记录）
+- **fatalError 时平台 2 的 platform_complete 被跳过，resultId 永久缺失** [route.ts: pendingData && !fatalError]：平台 1 成功后平台 2 触发 fatalError，client 永远收不到平台 2 的 result_id；SSE 错误处理架构限制，复杂修复超出本 story 范围
+
+## Deferred from: code review of 4b-3-editable-result (2026-03-30)
+
+- **两个 `useEffect` 同依赖 `[body]` 可合并**：editing 重置和 feedback 重置可合并为一个 effect，减少运行次数，提升可读性 [content-package.tsx:41-57]
+- **快速双击"有帮助"无防抖**：并发提交两次 feedback API，无 isSubmitting 防重入 guard；属 4b-4 scope，建议在 4b-4 review 时处理 [content-package.tsx]
+- **评论框 textarea 无 `maxLength` 约束**：用户可提交超大文本；服务端需校验，前端加 maxLength 更佳；属 4b-4 scope [content-package.tsx]
+- **`CollapsibleSection` 无 TypeScript 类型注解**：内部函数缺少 interface/type，影响类型安全 [content-package.tsx:~270]

@@ -1,6 +1,6 @@
 # Story 4a.3: 流式文本渲染组件
 
-Status: review
+Status: done
 
 ## Story
 
@@ -302,8 +302,36 @@ claude-sonnet-4-6
 - `src/app/app/page.tsx` — 修改（添加 SSE 消费 + 平台 tab + 错误重试 UI）
 - `src/app/api/mock-rewrite/route.ts` — 新建（Mock SSE 端点，Session B 任务）
 
+### Review Findings
+
+<!-- Round 2 review — 2026-03-27 -->
+<!-- Note: Story 4a.4 已将 page.tsx 的 SSE 逻辑重构至 rewrite-workspace.tsx + use-rewrite-stream.ts -->
+<!-- 原 Round 1 中针对 page.tsx SSE 逻辑的 9 项 patch 已迁移至 Story 4a.4 范围，此处不再跟踪 -->
+
+- [x] [Review][Patch] `splitIntoChunks` 用 `String.slice`（UTF-16 单元）切分 —— 内容含 🌟 emoji（双码元），chunkSize=8 时可劈裂为乱码，应改用 `[...text].slice(i, i+chunkSize).join('')` [`route.ts:95`]
+- [x] [Review][Patch] `catch` 块 `controller.enqueue` 在流已被消费端取消后会抛 TypeError，产生 unhandled rejection —— 应在 `start()` 顶部声明 `let isClosed = false`，finally 中置 true，catch 中 enqueue 前检查 [`route.ts:110-116`]
+- [x] [Review][Patch] 同源 API 路由不应有 `Access-Control-Allow-Origin: *` CORS 头 —— 移除该 header [`route.ts:127`]
+- [x] [Review][Patch] `GET()` handler 代理到 `POST()`，允许跨域页面以无 preflight 的简单 GET 请求触发 SSE —— 删除 `GET()` export [`route.ts:132-134`]
+
+- [x] [Review][Defer] Mock 端点无鉴权校验 [`route.ts`] — deferred, pre-existing; 鉴权在 middleware 层（Story 2.3 已实现）
+- [x] [Review][Defer] `StreamingText` text 为纯空白时"生成中..."占位符不显示 [`streaming-text.tsx`] — deferred, pre-existing; 当前业务不产生纯空白输入
+
+<!-- Dismissed (Round 2): -->
+<!-- - <Suspense> 无 fallback → 已修复（现为 fallback={null}） -->
+<!-- - 流式出错时结果区域隐藏 → 迁移至 Story 4a.4（rewrite-workspace.tsx） -->
+<!-- - activeTabRef 共用 → 迁移至 Story 4a.4（use-rewrite-stream.ts） -->
+<!-- - 流结束无 done 事件 → 迁移至 Story 4a.4 -->
+<!-- - 重复点击 AbortController → 迁移至 Story 4a.4 -->
+<!-- - response.ok 未检查 → 迁移至 Story 4a.4 -->
+<!-- - data 无类型校验 → 迁移至 Story 4a.4 -->
+<!-- - SSE 多 data: 行 → 迁移至 Story 4a.4 -->
+<!-- - TextDecoder 未 flush → 迁移至 Story 4a.4 -->
+<!-- - 剩余 buffer 未处理 → 迁移至 Story 4a.4 -->
+
 ## Change Log
 
 | 日期 | 变更说明 | 操作人 |
 |---|---|---|
 | 2026-03-27 | Story 4a.3 创建：流式文本渲染组件 | create-story |
+| 2026-03-27 | Code review Round 1：1 decision_needed, 13 patch, 3 defer, 8 dismissed | code-review |
+| 2026-03-27 | Code review Round 2：0 decision_needed, 4 patch, 2 defer, 10 dismissed（9项迁移至4a.4，1项已修复） | code-review |

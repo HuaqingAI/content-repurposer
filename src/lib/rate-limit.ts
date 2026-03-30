@@ -60,3 +60,54 @@ export function __resetStoreForTesting() {
   if (process.env.NODE_ENV !== 'test') return
   rateLimitStore.clear()
 }
+
+// ─── IP 限流（试用模式）───────────────────────────────────────────────────────
+// 未登录用户按 IP 限流，每小时最多 3 次，防止试用功能被滥用
+
+export const IP_RATE_LIMIT = {
+  maxRequests: 3,
+  windowMs: 60 * 60 * 1000, // 1 小时
+} as const
+
+// 独立 store，不与用户限流 store 混用
+const ipRateLimitStore = new Map<string, RateLimitEntry>()
+
+export function checkIpRateLimit(ip: string): {
+  allowed: boolean
+  resetAt: number
+} {
+  // 防御性校验：空 IP 视为超限拒绝
+  if (!ip) {
+    return { allowed: false, resetAt: Date.now() + IP_RATE_LIMIT.windowMs }
+  }
+
+  const now = Date.now()
+  const entry = ipRateLimitStore.get(ip)
+
+  // 条目不存在或窗口已过期 → 新窗口
+  if (!entry || entry.resetAt <= now) {
+    if (ipRateLimitStore.size >= STORE_MAX_SIZE) {
+      for (const [key, val] of ipRateLimitStore) {
+        if (val.resetAt <= now) ipRateLimitStore.delete(key)
+      }
+    }
+    const resetAt = now + IP_RATE_LIMIT.windowMs
+    ipRateLimitStore.set(ip, { count: 1, resetAt })
+    return { allowed: true, resetAt }
+  }
+
+  // 窗口内已达上限
+  if (entry.count >= IP_RATE_LIMIT.maxRequests) {
+    return { allowed: false, resetAt: entry.resetAt }
+  }
+
+  // 窗口内正常累计
+  entry.count++
+  return { allowed: true, resetAt: entry.resetAt }
+}
+
+/** 仅供测试使用，重置 IP 限流存储（非 test 环境为 no-op） */
+export function __resetIpStoreForTesting() {
+  if (process.env.NODE_ENV !== 'test') return
+  ipRateLimitStore.clear()
+}
