@@ -44,12 +44,20 @@ enum Feedback {
   @@map("feedback")
 }
 
+enum UserRole {
+  user
+  admin
+
+  @@map("user_role")
+}
+
 // 用户表
 model User {
   id           String    @id @default(uuid()) @db.Uuid
   phone        String?   @unique @db.VarChar(20)
   wechatOpenid String?   @unique @map("wechat_openid") @db.VarChar(100)
   displayName  String    @map("display_name") @db.VarChar(50)
+  role         UserRole  @default(user) @map("role")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
@@ -92,7 +100,8 @@ model RewriteResult {
   apiCostCents  Int       @default(0) @map("api_cost_cents")
   apiDurationMs Int       @default(0) @map("api_duration_ms")
   createdAt     DateTime  @default(now()) @map("created_at")
-  feedback      Feedback?
+  feedback        Feedback?
+  feedbackComment String?   @map("feedback_comment")
 
   record RewriteRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
 
