@@ -69,6 +69,30 @@ export async function proxy(request: NextRequest) {
     return redirectWithCookies(new URL('/login', request.url))
   }
 
+  // 4b. 管理后台路由保护：未登录跳 /login，非 admin 跳 /app
+  // 仅在路径以 /admin 开头时才查询数据库，避免每次请求都查 role
+  if (path === '/admin' || path.startsWith('/admin/')) {
+    if (!user) {
+      return redirectWithCookies(new URL('/login', request.url))
+    }
+    // 查询当前用户 role（使用 user session + RLS SELECT 策略 users_select_own）
+    const { data: userData, error: roleError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (roleError) {
+      // 查询失败时拒绝访问（fail-safe），避免 DB 故障时意外放行非 admin
+      console.error('[proxy] role query error:', roleError.message)
+      return redirectWithCookies(new URL('/app', request.url))
+    }
+
+    if (userData?.role !== 'admin') {
+      return redirectWithCookies(new URL('/app', request.url))
+    }
+  }
+
   // 5. 已登录用户访问 /login 跳转到 /app（避免重复登录）
   if (path === '/login' && user) {
     return redirectWithCookies(new URL('/app', request.url))
