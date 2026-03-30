@@ -106,3 +106,11 @@
 
 - **禁用拦截仅覆盖 /api/rewrite**：其他 API 路由（历史记录、用户设置等）未检查用户禁用状态；本 story AC4 明确范围仅为 /api/rewrite，其余路由需独立 story 覆盖。
 - **无防止封禁最后一个 admin 的逻辑**：当系统中仅剩一个 admin 账号时被禁用会导致后台完全锁死，需数据库层面或应用层保护；超出本 story 范围，建议在后续 admin 管理增强 story 中规划。
+
+## Deferred from: code review of 6-4-platform-config-editor (2026-03-30)
+
+- **`promptTemplate` 无最大长度限制**：API PUT 接受任意长度 promptTemplate，可被恶意管理员提交超长 prompt；建议后续添加长度上限（如 10,000 字符）。
+- **`VALID_PLATFORMS` 硬编码 vs 枚举动态派生**：`VALID_PLATFORMS` 手动列举三个平台，新增 Platform 枚举成员时需同步更新；目前平台稳定，新平台上线时一并评估。
+- **`saving` 在 res.json() 抛出后可能永久锁死**：极罕见场景（服务端 5xx 返回非 JSON body）下 `saving` 标志不被清除，按钮永久 disabled；建议加 AbortController 或组件卸载检查。
+- **`success: true` 切 tab 后不重置**：切换平台 tab 再切回，保存成功提示仍显示；建议在 `setActiveTab` 时重置当前 tab 的 `success` 状态。
+- **`requireAdmin` 时序侧信道**：用户不存在于 DB vs 角色非 admin 的 403 响应时序略有差异；管理员工具风险极低，可在安全审计时统一处理。

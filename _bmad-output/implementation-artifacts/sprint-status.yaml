@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-25
-last_updated: 2026-03-30  # 4b-3-editable-result: done; 6-1-admin-role-access-control: done; 6-2-system-dashboard: done; 6-3-user-management: done
+last_updated: 2026-03-30  # 4b-3-editable-result: done; 6-1-admin-role-access-control: done; 6-2-system-dashboard: done; 6-3-user-management: done; 6-4-platform-config-editor: done
 
 project: content-repurposer
 project_key: NOKEY
@@ -100,7 +100,7 @@ development_status:
   6-1-admin-role-access-control: done
   6-2-system-dashboard: done
   6-3-user-management: done
-  6-4-platform-config-editor: backlog
+  6-4-platform-config-editor: done
   epic-6-retrospective: optional
 
   # ── Epic 7：落地页与增长入口 ─────────────────────────────────

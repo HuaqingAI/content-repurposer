@@ -1,6 +1,6 @@
 import 'server-only'
 import { prisma } from '@/lib/prisma'
-import { Feedback } from '@/generated/prisma/enums'
+import { Feedback, Platform } from '@/generated/prisma/enums'
 
 // ── 用户管理 ──────────────────────────────────────────────────────
 
@@ -172,5 +172,88 @@ export async function getDashboardStats(range: DateRange): Promise<DashboardStat
     totalApiCalls,
     totalCostYuan,
     satisfactionRate,
+  }
+}
+
+// ── 平台配置管理 ──────────────────────────────────────────────────
+
+export type PlatformConfigItem = {
+  id: string
+  platform: string
+  configVersion: number
+  styleRules: unknown
+  promptTemplate: string
+  fewShotExamples: unknown
+  isActive: boolean
+  updatedAt: Date
+  updatedBy: string | null
+}
+
+export async function getPlatformConfigs(): Promise<PlatformConfigItem[]> {
+  const configs = await prisma.platformConfig.findMany({
+    where: { isActive: true },
+    orderBy: { platform: 'asc' },
+  })
+  return configs.map((c) => ({
+    id: c.id,
+    platform: c.platform,
+    configVersion: c.configVersion,
+    styleRules: c.styleRules,
+    promptTemplate: c.promptTemplate,
+    fewShotExamples: c.fewShotExamples,
+    isActive: c.isActive,
+    updatedAt: c.updatedAt,
+    updatedBy: c.updatedBy,
+  }))
+}
+
+export async function updatePlatformConfig(
+  platform: Platform,
+  fields: {
+    styleRules: unknown
+    promptTemplate: string
+    fewShotExamples: unknown
+  },
+  updatedBy: string
+): Promise<PlatformConfigItem> {
+  // 使用交互式事务将版本号查询与写入包在同一事务中，避免并发时版本号冲突
+  const newConfig = await prisma.$transaction(async (tx) => {
+    // 查当前最大版本号（含非激活版本）
+    const maxVersionResult = await tx.platformConfig.aggregate({
+      where: { platform },
+      _max: { configVersion: true },
+    })
+    const nextVersion = (maxVersionResult._max.configVersion ?? 0) + 1
+
+    // 停用旧激活版本
+    await tx.platformConfig.updateMany({
+      where: { platform, isActive: true },
+      data: { isActive: false },
+    })
+
+    // 创建新版本
+    return tx.platformConfig.create({
+      data: {
+        platform,
+        configVersion: nextVersion,
+        styleRules: fields.styleRules as Record<string, unknown>,
+        promptTemplate: fields.promptTemplate,
+        fewShotExamples: fields.fewShotExamples as Record<string, unknown>[],
+        isActive: true,
+        updatedBy,
+      },
+    })
+  })
+
+  return {
+    id: newConfig.id,
+    platform: newConfig.platform,
+    configVersion: newConfig.configVersion,
+    styleRules: newConfig.styleRules,
+    promptTemplate: newConfig.promptTemplate,
+    fewShotExamples: newConfig.fewShotExamples,
+    isActive: newConfig.isActive,
+    updatedAt: newConfig.updatedAt,
+    updatedBy: newConfig.updatedBy,
   }
 }
