@@ -101,3 +101,8 @@
 - **proxy.ts 用原始字符串 'admin' 而非 Prisma UserRole 枚举** [src/proxy.ts]：功能正确，类型安全优化；Prisma enum 导入在 proxy.ts 中可行，后续重构时考虑
 - **user.id 未做空值独立校验** [src/proxy.ts]：Supabase Auth 保证 user.id 非空，实际风险为零；过度防御，暂缓
 - **redirectWithCookies 将含 name/value 的 cookie 对象传入 options 参数** [src/proxy.ts]：pre-existing 模式（Story 2.3），当前运行正常，如遇 cookie 相关问题时排查
+
+## Deferred from: code review of 6-3-user-management (2026-03-30)
+
+- **禁用拦截仅覆盖 /api/rewrite**：其他 API 路由（历史记录、用户设置等）未检查用户禁用状态；本 story AC4 明确范围仅为 /api/rewrite，其余路由需独立 story 覆盖。
+- **无防止封禁最后一个 admin 的逻辑**：当系统中仅剩一个 admin 账号时被禁用会导致后台完全锁死，需数据库层面或应用层保护；超出本 story 范围，建议在后续 admin 管理增强 story 中规划。

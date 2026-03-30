@@ -14,12 +14,22 @@ jest.mock('@/lib/rate-limit', () => ({
   checkRateLimit: jest.fn(),
 }))
 
+jest.mock('@/lib/prisma', () => ({
+  prisma: {
+    user: {
+      findUnique: jest.fn(),
+    },
+  },
+}))
+
 import { POST } from '../route'
 import { createClient } from '@/lib/supabase/server'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { prisma } from '@/lib/prisma'
 
 const mockCreateClient = jest.mocked(createClient)
 const mockCheckRateLimit = jest.mocked(checkRateLimit)
+const mockPrismaUserFindUnique = jest.mocked(prisma.user.findUnique)
 
 function makeRequest() {
   return new Request('http://localhost/api/rewrite', {
@@ -31,6 +41,8 @@ function makeRequest() {
 
 beforeEach(() => {
   jest.clearAllMocks()
+  // 默认：用户未被禁用
+  mockPrismaUserFindUnique.mockResolvedValue({ isBanned: false } as never)
 })
 
 describe('POST /api/rewrite', () => {
@@ -109,5 +121,20 @@ describe('POST /api/rewrite', () => {
 
     await POST(makeRequest())
     expect(mockCheckRateLimit).toHaveBeenCalledWith('user-abc')
+  })
+
+  it('已禁用用户返回 403 ACCOUNT_BANNED', async () => {
+    const mockGetUser = jest.fn().mockResolvedValue({
+      data: { user: { id: 'banned-user' } },
+      error: null,
+    })
+    mockCreateClient.mockResolvedValue({ auth: { getUser: mockGetUser } } as never)
+    mockPrismaUserFindUnique.mockResolvedValue({ isBanned: true } as never)
+
+    const res = await POST(makeRequest())
+    expect(res.status).toBe(403)
+    const body = await res.json()
+    expect(body.error.code).toBe('ACCOUNT_BANNED')
+    expect(body.data).toBeNull()
   })
 })

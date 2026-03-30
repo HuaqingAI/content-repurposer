@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { prisma } from '@/lib/prisma'
 
 export async function POST(_request: Request) {
   // 1. 认证检查（必须先于限流）
@@ -26,7 +27,19 @@ export async function POST(_request: Request) {
     )
   }
 
-  // 2. 限流检查
+  // 2. 禁用账号检查
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { isBanned: true },
+  })
+  if (dbUser?.isBanned) {
+    return Response.json(
+      { data: null, error: { code: 'ACCOUNT_BANNED', message: '账号已被禁用' } },
+      { status: 403 }
+    )
+  }
+
+  // 3. 限流检查
   const rateLimitResult = checkRateLimit(user.id)
   if (!rateLimitResult.allowed) {
     // Math.max(1, ...) 确保 Retry-After 始终为正整数（RFC 7231 要求）

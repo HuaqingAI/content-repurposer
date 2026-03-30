@@ -2,6 +2,92 @@ import 'server-only'
 import { prisma } from '@/lib/prisma'
 import { Feedback } from '@/generated/prisma/enums'
 
+// ── 用户管理 ──────────────────────────────────────────────────────
+
+export type UserListItem = {
+  id: string
+  phone: string | null        // 脱敏后（138****1234）
+  displayName: string
+  role: string
+  isBanned: boolean
+  createdAt: Date
+  rewriteCount: number
+  lastActiveAt: Date | null
+}
+
+/** 手机号脱敏：保留前3位和后4位，中间替换为 ****
+ *  - 长度 < 7 位时无法有效脱敏，返回 '***' 避免泄露原始值
+ *  - phone 为 null 时原样返回
+ */
+function maskPhone(phone: string | null): string | null {
+  if (!phone) return phone
+  if (phone.length < 7) return '***'
+  return phone.slice(0, 3) + '****' + phone.slice(-4)
+}
+
+export async function getUserList(options: {
+  search?: string
+  skip?: number
+  take?: number
+}): Promise<{ users: UserListItem[]; total: number }> {
+  // 空字符串 search 应视为无过滤条件
+  const trimmedSearch = options.search?.trim()
+  const where = trimmedSearch ? { phone: { startsWith: trimmedSearch } } : {}
+
+  const [rawUsers, total] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        phone: true,
+        displayName: true,
+        role: true,
+        isBanned: true,
+        createdAt: true,
+        // 用 _count 聚合改写次数，避免加载全量记录
+        _count: { select: { rewriteRecords: true } },
+        // 只取最近一条用于 lastActiveAt
+        rewriteRecords: {
+          select: { createdAt: true },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: options.skip ?? 0,
+      take: options.take ?? 20,
+    }),
+    prisma.user.count({ where }),
+  ])
+
+  const users: UserListItem[] = rawUsers.map((u) => ({
+    id: u.id,
+    phone: maskPhone(u.phone),
+    displayName: u.displayName,
+    role: u.role,
+    isBanned: u.isBanned,
+    createdAt: u.createdAt,
+    rewriteCount: u._count.rewriteRecords,
+    lastActiveAt: u.rewriteRecords[0]?.createdAt ?? null,
+  }))
+
+  return { users, total }
+}
+
+export async function toggleUserBan(
+  userId: string,
+  banned: boolean
+): Promise<{ id: string; isBanned: boolean }> {
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: { isBanned: banned },
+    select: { id: true, isBanned: true },
+  })
+  return updated
+}
+
+// ── 仪表盘统计 ────────────────────────────────────────────────────
+
 export type DateRange = 'today' | '7d' | '30d'
 
 export type DashboardStats = {
