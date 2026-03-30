@@ -8,14 +8,14 @@ describe('StreamingText', () => {
   })
 
   it('shows cursor element when isStreaming=true', () => {
-    render(<StreamingText text="内容" isStreaming={true} />)
-    const cursor = document.querySelector('[aria-hidden="true"]')
+    const { container } = render(<StreamingText text="内容" isStreaming={true} />)
+    const cursor = container.querySelector('[aria-hidden="true"]')
     expect(cursor).toBeInTheDocument()
   })
 
   it('does not show cursor element when isStreaming=false', () => {
-    render(<StreamingText text="内容" isStreaming={false} />)
-    const cursor = document.querySelector('[aria-hidden="true"]')
+    const { container } = render(<StreamingText text="内容" isStreaming={false} />)
+    const cursor = container.querySelector('[aria-hidden="true"]')
     expect(cursor).not.toBeInTheDocument()
   })
 
@@ -25,9 +25,9 @@ describe('StreamingText', () => {
   })
 
   it('shows nothing special when text is empty and isStreaming=false', () => {
-    render(<StreamingText text="" isStreaming={false} />)
+    const { container } = render(<StreamingText text="" isStreaming={false} />)
     expect(screen.queryByText('生成中...')).not.toBeInTheDocument()
-    expect(document.querySelector('[aria-hidden="true"]')).not.toBeInTheDocument()
+    expect(container.querySelector('[aria-hidden="true"]')).not.toBeInTheDocument()
   })
 
   it('applies custom className', () => {

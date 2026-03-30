@@ -105,22 +105,21 @@ export async function POST() {
 
   const stream = new ReadableStream({
     async start(controller) {
-      // P7: 用 closed 标志防止 finally 关闭后 catch 块再次 enqueue
-      let closed = false;
       try {
         for await (const chunk of generateStream()) {
           controller.enqueue(encoder.encode(chunk));
         }
       } catch (err) {
-        if (!closed) {
+        try {
           const errorMsg = encodeSSE("error", {
             message: err instanceof Error ? err.message : "未知错误",
             retryable: false,
           });
           controller.enqueue(encoder.encode(errorMsg));
+        } catch {
+          // stream already cancelled by client, ignore
         }
       } finally {
-        closed = true;
         controller.close();
       }
     },

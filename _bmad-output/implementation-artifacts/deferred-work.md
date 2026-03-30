@@ -1,5 +1,13 @@
 # Deferred Work
 
+## Deferred from: code review of 7-2-guest-trial-onboarding (2026-03-30)
+
+- **localStorage 在有效性校验前即被删除**：`rewrite-workspace.tsx` 中 `removeItem` 在 JSON.parse 和长度校验之前调用，短文本（< 50 字）或畸形 JSON 数据会静默丢失，无用户提示。
+- **错误状态重试时 streamingBody 旧内容短暂闪烁**：`handleStart` 顶部调用 `setStreamingBody('')`，但在首次 render 刷新前 `showResult` 仍为 `true`，导致上一次结果出现短暂闪烁。
+- **SSE flush 尾部未按 `\n\n` 重新分割**：`trial-widget.tsx` 中 `decoder.decode()` 的 flush 结果追加到 `buffer` 后，残余块处理只做单行 `split('\n')`，若尾部包含多个 SSE 事件（`\n\n` 分隔）只取最后一个，前序事件被丢弃。
+- **字数计数器无无障碍关联**：`<span>` 计数器未设 `id` 或 `aria-live`，屏幕阅读器无法动态感知字数变化，`aria-label` 也未提及长度约束。
+- **page.test.tsx 断言弱化**：从 `getByText` 改为 `getAllByText(...).length >= 1`，无法检测平台名因意外重复渲染而出现多次的情况。
+
 ## Deferred from: code review of 1-2-database-schema-supabase (2026-03-25)
 
 - **AC4 导入路径更新**：`@/generated/prisma` 在 Prisma 7.x 应为 `@/generated/prisma/client`（无 index.ts）；后续故事中注意使用正确路径。
@@ -109,10 +117,17 @@
 
 - **多行 SSE data 字段未合并** [qwen.ts:parseSSEStream]：SSE spec 允许多行 data 字段，但 OpenAI-compatible API（包括通义千问 DashScope 兼容模式）实际均使用单行 JSON，无实际影响；如接入非标准 SSE 服务时处理
 
-## Deferred from: code review of 3-3-prompt-assembler (2026-03-27)
+## Deferred from: code review of 3-3-prompt-assembler (2026-03-30)
 
 - **W1: PLATFORM_LABELS/TONE_LABELS 无未知枚举值兜底** [prompt-assembler.ts:45-46]：TypeScript 编译期已通过 `Record<Platform, string>` 保证穷举，仅在运行时绕过类型系统时（如 `as Platform`）有风险；如后续新增平台枚举时须同步更新映射表
 - **W2: styleRules 为空数组时产生空"规则："段落** [prompt-assembler.ts:40]：属 DB 数据质量问题，空规则是否合法需业务侧决策；可在管理后台编辑器（Story 6.4）加非空校验
+- **W3: styleRules/fewShotExamples 数组元素类型未做元素级校验** [prompt-assembler.ts:42-52]：Array.isArray 满足 spec 要求，但非字符串元素（null、object 等）会静默输出 `[object Object]` 进入 prompt；DB 数据质量问题，管理后台 Story 6.4 加输入校验时处理
+- **W4: originalText 无最大长度限制** [prompt-assembler.ts:26-28]：超长输入（兆字节级）直接送 LLM，可能超 token 限制或产生高额费用；调用层（改写 API 路由）应在 Story 3.4a 中统一加请求体校验
+- **W5: DB 来源 styleRules/fewShotExamples 内容注入系统提示无净化**：依赖 DB 访问控制和管理员权限，攻击者需先攻破数据库；管理后台 Story 6.4 实现时加内容校验，当前可接受
+- **W6: 错误消息含内部平台标识符（如"平台 wechat"）**：内部服务间调用可接受；如该错误透传到公开 API 响应，须在路由层屏蔽
+- **W7: CONTENT_TYPE_MAP 无英文枚举兜底**[content-type-parser.ts:3-9]：LLM 偶发输出英文标签（如 "opinion"）时静默归为 `other`；系统提示已指定中文标签，属 LLM 合规性问题；如需强化可添加英文映射
+- **W8: prisma.platformConfig.findFirst 无 DB 错误包装** [prompt-assembler.ts:30-36]：DB 超时/连接失败抛出 Prisma 原始错误，无法区分"未配置"与"DB 宕机"；全局错误处理层统一处理
+- **W9: Unicode 全角/零宽空格绕过 originalText 空值校验** [prompt-assembler.ts:26]：`\u3000`（全角空格）可通过 `.trim()` 但 JavaScript `.trim()` 不覆盖所有 Unicode 空白；极小概率，MVP 可接受
 
 ## Deferred from: code review of 5-1-history-list-page (2026-03-27)
 
@@ -151,6 +166,11 @@
 - **Mock 端点无鉴权校验** [src/app/api/mock-rewrite/route.ts]：鉴权在 middleware 层（Story 2.3 已实现），mock 端点通过 proxy 保护；替换为真实 API 时鉴权天然覆盖
 - **`streamError` 渲染服务端文字未做内容过滤** [src/app/app/page.tsx]：React 已转义 HTML，当前为内部可控 API，无 XSS 风险；接入用户自定义 SSE 服务时重新评估
 - **`StreamingText` text 为纯空白时"生成中..."占位符不显示** [src/features/rewrite/streaming-text.tsx]：当前业务不产生纯空白输入，边界 UX 可后续处理
+
+## Deferred from: code review of 4a-3-streaming-text-renderer Round 3 (2026-03-30)
+
+- **Mock 端点无生产环境隔离守卫** [src/app/api/mock-rewrite/route.ts]：无 `NODE_ENV !== 'production'` 检查，端点在生产环境可访问，返回 mock 数据；auth middleware（Story 2.3）已保护该路径，替换为真实 API 时天然消除
+- **服务端 SSE 无 abort 支持 — 客户端断连后 mock 继续执行** [src/app/api/mock-rewrite/route.ts]：`ReadableStream` 无 `cancel` 回调，`generateStream()` 在客户端断开后继续 sleep/enqueue；mock 端点可接受，真实 SSE（Story 3.4a）时须添加 `cancel` 回调并向 generator 传递 AbortSignal
 
 ## Deferred from: code review of 7-1-ssr-landing-page-seo (2026-03-27)
 

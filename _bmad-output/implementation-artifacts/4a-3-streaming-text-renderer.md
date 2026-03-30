@@ -1,6 +1,7 @@
 # Story 4a.3: 流式文本渲染组件
 
 Status: done
+<!-- Round 3 review completed 2026-03-30: all patch findings fixed -->
 
 ## Story
 
@@ -328,6 +329,19 @@ claude-sonnet-4-6
 <!-- - TextDecoder 未 flush → 迁移至 Story 4a.4 -->
 <!-- - 剩余 buffer 未处理 → 迁移至 Story 4a.4 -->
 
+<!-- Round 3 review — 2026-03-30 -->
+- [x] [Review][Patch] `closed` flag 逻辑错误 — Round 2 补丁实现有误：`catch` 中 `if (!closed)` 检查时 `closed` 始终为 `false`（`finally` 中才设置），守卫永不生效；happy-path `controller.enqueue()` 同样无保护 [`route.ts:109-124`]
+- [x] [Review][Patch] 测试全局 `document.querySelector('[aria-hidden="true"]')` — 未限定在组件容器内，JSDOM 中其他元素携带该属性时断言可能产生误判 [`streaming-text.test.tsx:13,20`]
+
+- [x] [Review][Defer] Mock 端点无生产环境隔离守卫 [`route.ts`] — deferred, pre-existing; 鉴权在 middleware 层（Story 2.3），替换为真实 API 时天然覆盖
+- [x] [Review][Defer] 无 abort signal — 客户端断开连接后 `generateStream()` 继续执行全部 sleep/enqueue [`route.ts`] — deferred, pre-existing; mock 端点可接受，真实 SSE（Story 3.4a）时须添加 AbortController
+
+<!-- Dismissed (Round 3): -->
+<!-- - encodeSSE event 名未校验 → 所有 event 名均为代码内字面量，无外部输入 -->
+<!-- - splitIntoChunks chunkSize=0 死循环 → 调用处均为硬编码 8/10 -->
+<!-- - className 尾随空格 → 不影响行为 -->
+<!-- - mock-record- ID 碰撞 → mock dev 场景无语义影响 -->
+
 ## Change Log
 
 | 日期 | 变更说明 | 操作人 |
@@ -335,3 +349,4 @@ claude-sonnet-4-6
 | 2026-03-27 | Story 4a.3 创建：流式文本渲染组件 | create-story |
 | 2026-03-27 | Code review Round 1：1 decision_needed, 13 patch, 3 defer, 8 dismissed | code-review |
 | 2026-03-27 | Code review Round 2：0 decision_needed, 4 patch, 2 defer, 10 dismissed（9项迁移至4a.4，1项已修复） | code-review |
+| 2026-03-30 | Code review Round 3：0 decision_needed, 2 patch, 2 defer, 4 dismissed | code-review |

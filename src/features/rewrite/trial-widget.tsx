@@ -34,7 +34,7 @@ export function TrialWidget() {
   }, [])
 
   const charCount = [...text].length
-  const canStart = charCount >= MIN_CHARS && platform !== null && status !== 'streaming'
+  const canStart = charCount >= MIN_CHARS && charCount <= MAX_CHARS && platform !== null && status !== 'streaming'
 
   async function handleStart() {
     if (!canStart || !platform) return
@@ -117,10 +117,8 @@ export function TrialWidget() {
             streamDone = true
             break
           } else if (eventType === 'error') {
-            const retryable = data.retryable !== false
-            const msg = retryable
-              ? '改写遇到问题，请重试'
-              : typeof data.message === 'string'
+            const msg =
+              typeof data.message === 'string' && data.message
                 ? data.message
                 : '改写遇到问题，请重试'
             setErrorMessage(msg)
@@ -150,10 +148,8 @@ export function TrialWidget() {
             if (eventType === 'done') {
               setStatus('complete')
             } else if (eventType === 'error') {
-              const retryable = data.retryable !== false
-              const msg = retryable
-                ? '改写遇到问题，请重试'
-                : typeof data.message === 'string'
+              const msg =
+                typeof data.message === 'string' && data.message
                   ? data.message
                   : '改写遇到问题，请重试'
               setErrorMessage(msg)
@@ -165,8 +161,8 @@ export function TrialWidget() {
         }
       }
 
-      // 流正常关闭但未收到 done 时
-      if (status === 'streaming') {
+      // 流正常关闭但未收到 done 时（用本地变量，避免 stale closure）
+      if (!streamDone) {
         setStatus('complete')
       }
     } catch (err) {
@@ -257,7 +253,7 @@ export function TrialWidget() {
           <p className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">
             {previewText}
             {hiddenText && (
-              <span className="blur-sm select-none">{hiddenText}</span>
+              <span className={status === 'complete' ? 'blur-sm select-none' : ''}>{hiddenText}</span>
             )}
           </p>
           {showBlur && (

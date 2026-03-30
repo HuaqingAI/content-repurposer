@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-25
-last_updated: 2026-03-30  # 4b-3-editable-result: done; 6-1-admin-role-access-control: done; 6-2-system-dashboard: done; 6-3-user-management: done; 6-4-platform-config-editor: done
+last_updated: 2026-03-30  # merge all story branches → dev; all epics done
 
 project: content-repurposer
 project_key: NOKEY
@@ -72,7 +72,7 @@ development_status:
   epic-3-retrospective: optional
 
   # ── Epic 4a：改写输入体验 ────────────────────────────────────
-  epic-4a: in-progress
+  epic-4a: done
   4a-1-original-text-input: done
   4a-2-platform-tone-selector: done
   4a-3-streaming-text-renderer: done
@@ -82,7 +82,7 @@ development_status:
   epic-4a-retrospective: optional
 
   # ── Epic 4b：改写输出体验 ────────────────────────────────────
-  epic-4b: in-progress
+  epic-4b: done
   4b-1-content-package-display: done
   4b-2-one-click-copy: done
   4b-3-editable-result: done
@@ -96,7 +96,7 @@ development_status:
   epic-5-retrospective: optional
 
   # ── Epic 6：管理后台 ─────────────────────────────────────────
-  epic-6: in-progress
+  epic-6: done
   6-1-admin-role-access-control: done
   6-2-system-dashboard: done
   6-3-user-management: done
@@ -104,7 +104,7 @@ development_status:
   epic-6-retrospective: optional
 
   # ── Epic 7：落地页与增长入口 ─────────────────────────────────
-  epic-7: in-progress
+  epic-7: done
   7-1-ssr-landing-page-seo: done
-  7-2-guest-trial-onboarding: backlog
+  7-2-guest-trial-onboarding: done
   epic-7-retrospective: optional

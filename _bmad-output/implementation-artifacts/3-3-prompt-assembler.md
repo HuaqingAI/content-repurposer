@@ -275,6 +275,13 @@ jest.mock('@/lib/prisma', () => ({
 - [x] [Review][Patch] P5: 测试断言 `.toThrow('平台 wechat 无激活配置')` 截断了 AC #3 规定的完整错误文本，后半段无验证 [prompt-assembler.test.ts:115]
 - [x] [Review][Defer] W1: `PLATFORM_LABELS`/`TONE_LABELS` 无未知枚举值兜底 [prompt-assembler.ts:45-46] — deferred, pre-existing（TypeScript 编译期已保证枚举值合法）
 - [x] [Review][Defer] W2: `styleRules` 为空数组时产生空"规则："段落 [prompt-assembler.ts:40] — deferred, pre-existing（DB 数据质量问题，非代码 bug）
+- [x] [Review][Defer] W3: `styleRules`/`fewShotExamples` 数组元素类型未校验 [prompt-assembler.ts:42-52] — deferred, pre-existing（Array.isArray 满足 spec 要求，元素级校验为增强，DB 数据质量问题）
+- [x] [Review][Defer] W4: `originalText` 无最大长度限制，超长输入导致 token 超限或 API 高额费用 — deferred, pre-existing（调用层职责，本 story 范围外）
+- [x] [Review][Defer] W5: DB 来源的 `styleRules`/`fewShotExamples` 内容注入系统提示无净化 — deferred, pre-existing（依赖 DB 访问控制，管理后台 Story 6.x 加输入校验时一并处理）
+- [x] [Review][Defer] W6: 错误消息含内部平台标识符（如"平台 wechat"）直接透传 — deferred, pre-existing（当前为内部错误，公开 API 层可屏蔽）
+- [x] [Review][Defer] W7: `CONTENT_TYPE_MAP` 无英文枚举值兜底，LLM 输出英文时静默归为 `other` [content-type-parser.ts:3-9] — deferred, pre-existing（系统提示已指定中文标签，LLM 行为问题）
+- [x] [Review][Defer] W8: `prisma.platformConfig.findFirst` 无 DB 连接错误包装，超时/连接失败抛出通用错误 [prompt-assembler.ts:30-36] — deferred, pre-existing（全局错误处理层职责）
+- [x] [Review][Defer] W9: Unicode 全角/零宽空格绕过 `originalText` 空值校验 [prompt-assembler.ts:26] — deferred, pre-existing（极小概率，可接受的 MVP 限制）
 
 ## Dev Agent Record
 

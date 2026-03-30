@@ -1,6 +1,6 @@
 # Story 7.2：未登录试用体验与注册引导
 
-Status: review
+Status: done
 
 ## Story
 
@@ -247,6 +247,18 @@ const PLATFORMS: { value: Platform; label: string }[] = [
 - **新文件路径**：`src/features/rewrite/trial-widget.tsx`（符合 feature-based 组织）
 - **测试文件路径**：`src/features/rewrite/__tests__/trial-widget.test.tsx`（与源文件同级 `__tests__/` 目录，参照 `src/app/__tests__/page.test.tsx` 的模式）
 - **命名规范**：kebab-case 文件名，PascalCase 组件名（`TrialWidget`），符合架构规范
+
+### Review Findings
+
+- [x] [Review][Patch] Stale `status` closure — end-of-stream fallback 永远失效 [trial-widget.tsx] — fixed
+- [x] [Review][Patch] 流式阶段 `hiddenText` 已应用 `blur-sm`，违反"流式阶段不应用模糊"规范 [trial-widget.tsx] — fixed
+- [x] [Review][Patch] `canStart` 缺少上界检查，允许超过 5000 字的文本提交 [trial-widget.tsx] — fixed
+- [x] [Review][Patch] SSE `error` 事件 `retryable` 逻辑错误：字段缺失时默认 `true`，覆盖服务端具体 message [trial-widget.tsx] — fixed
+- [x] [Review][Defer] localStorage 在有效性校验前即被删除，短文本或畸形数据静默丢失 [rewrite-workspace.tsx] — deferred, pre-existing
+- [x] [Review][Defer] 错误状态重试时 streamingBody 清除前有短暂旧内容闪烁 [trial-widget.tsx] — deferred, pre-existing
+- [x] [Review][Defer] SSE flush 尾部未按 `\n\n` 重新分割，多事件尾块处理不完整 [trial-widget.tsx] — deferred, pre-existing
+- [x] [Review][Defer] 字数计数器无 `aria-describedby`，屏幕阅读器无法动态感知 [trial-widget.tsx] — deferred, pre-existing
+- [x] [Review][Defer] page.test.tsx 断言弱化（`getAllByText length >= 1`），无法感知意外重复渲染 [page.test.tsx] — deferred, pre-existing
 
 ### References
 
