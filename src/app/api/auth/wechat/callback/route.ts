@@ -8,6 +8,10 @@ import { createServiceRoleClient } from '@/lib/supabase/server-admin'
 const APP_URL = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '')
 
 export async function GET(request: NextRequest) {
+  if (!env.WECHAT_APP_ID || !env.WECHAT_APP_SECRET) {
+    return Response.redirect(`${APP_URL}/login?error=wechat_failed`)
+  }
+
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
   const state = searchParams.get('state')

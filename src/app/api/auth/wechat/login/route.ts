@@ -8,6 +8,10 @@ import { env } from '@/lib/env'
 const APP_URL = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '')
 
 export async function GET(_request: NextRequest) {
+  if (!env.WECHAT_APP_ID || !env.WECHAT_APP_SECRET) {
+    return Response.json({ error: '微信登录未配置' }, { status: 503 })
+  }
+
   const state = randomBytes(16).toString('hex')
 
   const cookieStore = await cookies()
