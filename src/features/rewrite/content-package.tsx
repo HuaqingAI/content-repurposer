@@ -131,7 +131,7 @@ export function ContentPackage({
             tabIndex={body ? 0 : undefined}
             aria-label={body ? '点击编辑内容' : undefined}
             onKeyDown={body ? (e) => {
-              if ((e.key === 'Enter' && !e.isComposing) || e.key === ' ') {
+              if ((e.key === 'Enter' && !e.nativeEvent.isComposing) || e.key === ' ') {
                 e.preventDefault()
                 setIsEditing(true)
               }
