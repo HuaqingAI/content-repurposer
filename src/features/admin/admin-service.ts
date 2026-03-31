@@ -1,6 +1,7 @@
 import 'server-only'
 import { prisma } from '@/lib/prisma'
 import { Feedback, Platform } from '@/generated/prisma/enums'
+import { Prisma } from '@/generated/prisma/client'
 
 // ── 用户管理 ──────────────────────────────────────────────────────
 
@@ -236,9 +237,9 @@ export async function updatePlatformConfig(
       data: {
         platform,
         configVersion: nextVersion,
-        styleRules: fields.styleRules as Record<string, unknown>,
+        styleRules: fields.styleRules as Prisma.InputJsonValue,
         promptTemplate: fields.promptTemplate,
-        fewShotExamples: fields.fewShotExamples as Record<string, unknown>[],
+        fewShotExamples: fields.fewShotExamples as Prisma.InputJsonValue,
         isActive: true,
         updatedBy,
       },
