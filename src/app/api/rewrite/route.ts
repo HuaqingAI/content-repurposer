@@ -209,10 +209,8 @@ export async function POST(request: Request) {
           const parser = new LLMOutputParser()
           const abortController = new AbortController()
           let unsupportedDetected = false
-          // 暂存 onComplete 数据，供 Promise resolve 后 DB 写入使用
-          let pendingData: PendingPlatformData | null = null
-
-          await new Promise<void>((resolve) => {
+          // TypeScript 5.4: 直接从 Promise 返回数据，避免闭包赋值后 never 类型推断问题
+          const pendingData = await new Promise<PendingPlatformData | null>((resolve) => {
             llmRouter.streamChat({
               model: DEEPSEEK_MODELS.CHAT,
               messages,
@@ -257,19 +255,19 @@ export async function POST(request: Request) {
                   send('tags', { tags })
                   send('hook', { hook })
 
-                  // 暂存数据供 resolve 后处理
-                  pendingData = {
+                  // 直接 resolve 数据，供 await 后处理
+                  resolve({
                     titles,
                     tags,
                     hook,
                     bodyChunks: [...bodyChunks],
                     rawLLMOutput,
                     costRecord,
-                  }
+                  })
+                  return
                 }
-                // 无论 unsupportedDetected 是否为 true 都必须 resolve，
-                // 防止 abort 后 provider 直接回调 onComplete 而非 onError 时 Promise 永久挂起
-                resolve()
+                // unsupportedDetected: abort 后 provider 直接回调 onComplete 时，resolve(null) 防止永久挂起
+                resolve(null)
               },
               onError: (error) => {
                 // CANCELLED 是 abort（如 [UNSUPPORTED_CONTENT]）的预期结果，静默处理
@@ -278,7 +276,7 @@ export async function POST(request: Request) {
                   fatalError = true
                   send('error', { message: error.message, retryable: true })
                 }
-                resolve()
+                resolve(null)
               },
             })
           })
