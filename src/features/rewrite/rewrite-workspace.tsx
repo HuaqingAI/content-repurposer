@@ -52,7 +52,6 @@ export function RewriteWorkspace() {
   const handleUrlError = (message?: string) => {
     setUrlExtractError(message ?? null)
     setInputTab('paste')
-    // AC3：切回粘贴 tab 后聚焦 textarea，引导手动粘贴
     setTimeout(() => {
       const ta = document.querySelector<HTMLTextAreaElement>('textarea[aria-label="原文输入框"]')
       ta?.focus()
@@ -80,7 +79,6 @@ export function RewriteWorkspace() {
     const rawTone = searchParams.get('tone')
     if (rawTone && VALID_TONES.includes(rawTone as Tone)) setTone(rawTone as Tone)
 
-    // 若没有 searchParams 文本，检查 trial 预填
     if (!rawText) {
       try {
         const trialRaw = localStorage.getItem('shiwen_trial_prefill')
@@ -121,75 +119,109 @@ export function RewriteWorkspace() {
   const isDisabled = !isTextValid || platforms.length === 0 || isRewriting
 
   const hasResults = Object.keys(streamingTexts).length > 0 || isRewriting
-  // 有部分平台已完成（mid-stream error）→ 按钮显示"重试"；连接失败无结果 → "重新改写"
   const hasPartialResults =
     streamError !== null && Object.keys(streamingTexts).length > 0
 
   return (
-    <div className="max-w-xl mx-auto p-6 flex flex-col gap-5">
-      <h1 className="text-lg font-semibold text-gray-800">改写工作区</h1>
-      {/* 输入方式 tab */}
-      <div className="flex border border-border-default rounded-md overflow-hidden mb-0">
-        {(['paste', 'url'] as const).map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            disabled={isRewriting}
-            onClick={() => { setInputTab(tab); setUrlExtractError(null) }}
-            className={[
-              'flex-1 py-1.5 text-center text-xs font-medium transition-all duration-150',
-              inputTab === tab
-                ? 'bg-white text-gray-800 font-semibold shadow-[inset_0_-2px_0_var(--color-accent)]'
-                : 'bg-surface-2 text-text-secondary',
-              isRewriting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
-            ].join(' ')}
-          >
-            {tab === 'paste' ? '粘贴全文' : 'URL 提取'}
-          </button>
-        ))}
+    <div className="max-w-xl mx-auto px-4 py-8 flex flex-col gap-5">
+      {/* 页面标题 */}
+      <div className="mb-1">
+        <h1 className="text-[1.15rem] font-semibold text-ink tracking-tight">改写工作区</h1>
+        <p className="text-[12.5px] text-text-caption mt-0.5">粘贴原文，选择平台，一键生成多平台内容</p>
       </div>
 
-      {inputTab === 'paste' ? (
-        <>
-          <TextInput value={text} onChange={setText} disabled={isRewriting} />
-          {urlExtractError && (
-            <p className="text-xs text-red-500 -mt-3">{urlExtractError}</p>
+      {/* 主操作卡片 */}
+      <div className="bg-white rounded-2xl border border-border-default shadow-[0_1px_12px_rgba(0,0,0,0.05)] overflow-hidden">
+
+        {/* 输入方式 tab */}
+        <div className="flex border-b border-border-default">
+          {(['paste', 'url'] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              disabled={isRewriting}
+              onClick={() => { setInputTab(tab); setUrlExtractError(null) }}
+              className={[
+                'flex-1 py-2.5 text-center text-[12.5px] font-medium transition-all duration-150 relative',
+                inputTab === tab
+                  ? 'text-accent after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-accent after:content-[\'\']'
+                  : 'text-text-caption hover:text-text-secondary bg-surface-2/50',
+                isRewriting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+              ].join(' ')}
+            >
+              {tab === 'paste' ? '粘贴全文' : 'URL 提取'}
+            </button>
+          ))}
+        </div>
+
+        {/* 输入区 */}
+        <div className="p-4 flex flex-col gap-4">
+          {inputTab === 'paste' ? (
+            <>
+              <TextInput value={text} onChange={setText} disabled={isRewriting} />
+              {urlExtractError && (
+                <p className="text-xs text-red-500 -mt-2">{urlExtractError}</p>
+              )}
+            </>
+          ) : (
+            <UrlInput
+              onExtracted={handleUrlExtracted}
+              onError={handleUrlError}
+              disabled={isRewriting}
+            />
           )}
-        </>
-      ) : (
-        <UrlInput
-          onExtracted={handleUrlExtracted}
-          onError={handleUrlError}
-          disabled={isRewriting}
-        />
-      )}
-      <PlatformSelector value={platforms} onChange={setPlatforms} disabled={isRewriting} />
-      <ToneSelector value={tone} onChange={setTone} disabled={isRewriting} />
 
-      <button
-        type="button"
-        disabled={isDisabled}
-        onClick={startStream}
-        className="w-full py-3 rounded-lg bg-accent text-white font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-accent-hover transition-colors"
-      >
-        {isRewriting ? '改写中...' : isDone ? '重新改写' : '开始改写'}
-      </button>
+          {/* 分隔线 */}
+          <div className="flex items-center gap-3">
+            <span className="h-px flex-1 bg-border-default" />
+            <span className="text-[10.5px] tracking-[0.15em] uppercase text-text-caption">配置</span>
+            <span className="h-px flex-1 bg-border-default" />
+          </div>
 
+          <PlatformSelector value={platforms} onChange={setPlatforms} disabled={isRewriting} />
+          <ToneSelector value={tone} onChange={setTone} disabled={isRewriting} />
+        </div>
+
+        {/* 提交按钮 */}
+        <div className="px-4 pb-4">
+          <button
+            type="button"
+            disabled={isDisabled}
+            onClick={startStream}
+            className="w-full py-3 rounded-full font-semibold text-[13px] tracking-wide transition-all duration-150 disabled:opacity-35 disabled:cursor-not-allowed bg-accent text-white hover:bg-accent-hover active:scale-[0.98] shadow-[0_2px_10px_rgba(61,107,79,0.22)] hover:shadow-[0_3px_16px_rgba(61,107,79,0.32)]"
+          >
+            {isRewriting ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="inline-flex gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/70 animate-bounce [animation-delay:0ms]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/70 animate-bounce [animation-delay:120ms]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/70 animate-bounce [animation-delay:240ms]" />
+                </span>
+                改写中
+              </span>
+            ) : isDone ? '重新改写' : '开始改写'}
+          </button>
+        </div>
+      </div>
+
+      {/* 错误提示 */}
       {streamError && (
-        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
-          <p className="flex-1 text-sm text-red-700">{streamError}</p>
+        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+          <p className="flex-1 text-[12.5px] text-red-700">{streamError}</p>
           <button
             type="button"
             onClick={startStream}
-            className="shrink-0 text-sm font-medium text-red-700 underline hover:no-underline"
+            className="shrink-0 text-[12.5px] font-semibold text-red-600 hover:text-red-800 transition-colors"
           >
             {hasPartialResults ? '重试' : '重新改写'}
           </button>
         </div>
       )}
 
+      {/* 结果区 */}
       {hasResults && (
         <div className="flex flex-col gap-3">
+          {/* 平台结果 tab */}
           <div className="flex gap-2 flex-wrap">
             {platforms.map((platform) => (
               <button
@@ -197,10 +229,10 @@ export function RewriteWorkspace() {
                 type="button"
                 onClick={() => setActiveTab(platform)}
                 className={[
-                  'px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-150',
+                  'px-4 py-1.5 rounded-full text-[12.5px] font-medium transition-all duration-150',
                   activeTab === platform
-                    ? 'bg-accent text-white'
-                    : 'bg-surface-2 text-text-secondary hover:bg-accent-light border border-border-default',
+                    ? 'bg-accent text-white shadow-sm'
+                    : 'bg-white border border-border-default text-text-secondary hover:border-accent/30 hover:bg-accent-muted/50',
                 ].join(' ')}
               >
                 {PLATFORM_LABELS[platform]}

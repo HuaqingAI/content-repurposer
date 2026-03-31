@@ -8,6 +8,12 @@ const PLATFORM_LABELS: Record<Platform, string> = {
   zhihu: '知乎',
 }
 
+const PLATFORM_DOTS: Record<Platform, string> = {
+  xiaohongshu: '#ff2442',
+  wechat: '#07c160',
+  zhihu: '#0066ff',
+}
+
 const PLATFORMS: Platform[] = ['xiaohongshu', 'wechat', 'zhihu']
 
 interface PlatformSelectorProps {
@@ -20,7 +26,7 @@ export function PlatformSelector({ value, onChange, disabled = false }: Platform
   const toggle = (platform: Platform) => {
     if (disabled) return
     if (value.includes(platform)) {
-      if (value.length === 1) return // 至少保留一个平台（AC#1）
+      if (value.length === 1) return
       onChange(value.filter((p) => p !== platform))
     } else {
       onChange([...value, platform])
@@ -29,7 +35,7 @@ export function PlatformSelector({ value, onChange, disabled = false }: Platform
 
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-xs font-medium text-text-secondary">目标平台</span>
+      <span className="text-[11px] font-medium text-text-caption tracking-wide uppercase">目标平台</span>
       <div className="flex flex-wrap gap-2" role="group" aria-label="目标平台选择">
         {PLATFORMS.map((platform) => {
           const isSelected = value.includes(platform)
@@ -41,13 +47,17 @@ export function PlatformSelector({ value, onChange, disabled = false }: Platform
               disabled={disabled}
               aria-pressed={isSelected}
               className={[
-                'px-4 py-2 rounded-lg border text-sm transition-colors duration-150',
+                'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-[12.5px] font-medium transition-all duration-150',
                 isSelected
-                  ? 'bg-accent-light border-accent text-accent font-medium'
-                  : 'bg-surface-2 border-border-default text-text-secondary hover:border-border-focus',
-                disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+                  ? 'bg-accent border-accent text-white shadow-sm'
+                  : 'bg-transparent border-border-default text-text-secondary hover:border-accent/35 hover:bg-accent-muted/50',
+                disabled ? 'opacity-45 cursor-not-allowed' : 'cursor-pointer',
               ].join(' ')}
             >
+              <span
+                className="w-[6px] h-[6px] rounded-full flex-shrink-0"
+                style={{ backgroundColor: isSelected ? 'rgba(255,255,255,0.7)' : PLATFORM_DOTS[platform] }}
+              />
               {PLATFORM_LABELS[platform]}
             </button>
           )

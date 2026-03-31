@@ -36,8 +36,13 @@ export function ToneSelector({ value, onChange, disabled = false }: ToneSelector
 
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-xs font-medium text-text-secondary">语气风格</span>
-      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="语气风格选择">
+      <span className="text-[11px] font-medium text-text-caption tracking-wide uppercase">语气风格</span>
+      {/* 分段选择器样式 */}
+      <div
+        className="inline-flex rounded-lg border border-border-default bg-surface-2/60 p-0.5 gap-0.5"
+        role="radiogroup"
+        aria-label="语气风格选择"
+      >
         {TONES.map((tone) => {
           const isSelected = value === tone
           return (
@@ -51,11 +56,11 @@ export function ToneSelector({ value, onChange, disabled = false }: ToneSelector
               aria-checked={isSelected}
               tabIndex={isSelected ? 0 : -1}
               className={[
-                'px-4 py-2 rounded-lg border text-sm transition-colors duration-150',
+                'flex-1 py-1.5 px-4 rounded-md text-[12.5px] font-medium transition-all duration-150',
                 isSelected
-                  ? 'bg-accent-light border-accent text-accent font-medium'
-                  : 'bg-surface-2 border-border-default text-text-secondary hover:border-border-focus',
-                disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+                  ? 'bg-white text-accent shadow-sm border border-border-default'
+                  : 'text-text-secondary hover:text-ink',
+                disabled ? 'opacity-45 cursor-not-allowed' : 'cursor-pointer',
               ].join(' ')}
             >
               {TONE_LABELS[tone]}
