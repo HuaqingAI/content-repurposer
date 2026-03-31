@@ -10,7 +10,6 @@ data:
   NEXT_TELEMETRY_DISABLED: "1"
   PORT: "3000"
   HOSTNAME: "0.0.0.0"
-  # 替换为实际域名
-  NEXT_PUBLIC_APP_URL: "https://your-domain.com"
+  NEXT_PUBLIC_APP_URL: "http://cr.test.huaqing.run"
   NEXT_PUBLIC_SUPABASE_URL: "https://zsiqbraihisucvhubeld.supabase.co"
   NEXT_PUBLIC_SUPABASE_ANON_KEY: "sb_publishable_LK4loQfrHO6_qY0Xyi7VJg_TuR6SqsL"

@@ -6,6 +6,8 @@ metadata:
   labels:
     app: content-repurposer
 spec:
+  # ClusterIP 配合 Nginx Ingress Controller 使用
+  # 外部流量通过 Ingress → Service → Pod
   type: ClusterIP
   selector:
     app: content-repurposer

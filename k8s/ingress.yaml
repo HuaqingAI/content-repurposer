@@ -1,6 +1,10 @@
 # 使用阿里云 ACK 的 Nginx Ingress Controller
-# 需提前安装 cert-manager 来自动签发 HTTPS 证书
-# 或者直接在阿里云 CLB/ALB 上配置 SSL 证书
+# 当前配置：HTTP only（测试环境，无 TLS）
+# 启用 HTTPS 步骤：
+#   1. 安装 cert-manager
+#   2. 创建 ClusterIssuer（Let's Encrypt）
+#   3. 取消注释下方 tls 段 + cert-manager 注解
+#   4. 将 ssl-redirect 改为 "true"
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -9,23 +13,28 @@ metadata:
   labels:
     app: content-repurposer
   annotations:
-    kubernetes.io/ingress.class: "nginx"
-    # 自动申请 Let's Encrypt 证书（需 cert-manager）
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    # HTTP 强制跳转 HTTPS
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    # 请求大小限制（适文场景原文可能较长）
+    # 使用 spec.ingressClassName 替代旧式 annotation
+    # kubernetes.io/ingress.class: "nginx"
+    # HTTP → HTTPS 强制跳转（启用 HTTPS 后取消注释）
+    # nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # 自动申请 Let's Encrypt 证书（需 cert-manager，启用 HTTPS 后取消注释）
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    # 请求大小限制（适文场景原文较长）
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
-    # 超时设置（AI 改写接口响应较慢）
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+    # 超时设置（AI 改写接口响应较慢，SSE 流式接口需要更长时间）
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    # SSE 流式接口禁用缓冲
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
 spec:
-  tls:
-    - hosts:
-        - your-domain.com   # 替换为实际域名
-      secretName: content-repurposer-tls
+  ingressClassName: nginx
+  # 启用 HTTPS 后取消注释 tls 段
+  # tls:
+  #   - hosts:
+  #       - cr.test.huaqing.run
+  #     secretName: content-repurposer-tls
   rules:
-    - host: your-domain.com   # 替换为实际域名
+    - host: cr.test.huaqing.run
       http:
         paths:
           - path: /
