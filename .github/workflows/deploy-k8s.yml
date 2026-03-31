@@ -139,14 +139,6 @@ jobs:
             --namespace=content-repurposer \
             --timeout=300s
 
-      - name: 健康检查
-        run: |
-          kubectl wait --for=condition=ready pod \
-            --selector=app=content-repurposer \
-            --namespace=content-repurposer \
-            --timeout=120s
-          echo "部署成功！"
-
       - name: 部署失败时诊断
         if: failure()
         run: |
