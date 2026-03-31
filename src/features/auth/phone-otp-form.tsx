@@ -60,7 +60,8 @@ export function PhoneOtpForm() {
     try {
       const { error } = await supabase.auth.signInWithOtp({ phone: `86${phone}` })
       if (error) {
-        setPhoneError('发送验证码失败，请稍后重试')
+        console.error('[OTP] signInWithOtp error:', error.message, error)
+        setPhoneError(`发送失败: ${error.message}`)
         return
       }
       setOtpSent(true)
