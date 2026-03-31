@@ -157,7 +157,7 @@ export class QwenProvider implements LLMProvider {
           Authorization: `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ model, messages, stream: true, max_tokens: 4096 }),
+        body: JSON.stringify({ model, messages, stream: true, max_tokens: 4096, enable_thinking: false }),
         signal: controller.signal,
       })
     } catch (err) {
