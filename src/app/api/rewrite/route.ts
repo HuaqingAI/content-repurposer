@@ -3,8 +3,8 @@ import { checkRateLimit, checkIpRateLimit } from '@/lib/rate-limit'
 import { llmRouter } from '@/lib/llm/llm-router'
 import { assemblePrompt } from '@/lib/llm/prompt-assembler'
 import { LLMOutputParser } from '@/lib/llm/output-parser'
-import { DEEPSEEK_MODELS } from '@/lib/llm/types'
 import type { TokenUsage } from '@/lib/llm/types'
+import { QWEN_MODELS } from '@/lib/llm/providers/qwen'
 import { parseContentType } from '@/lib/llm/content-type-parser'
 import { createPlatformCostRecord } from '@/lib/llm/cost-tracker'
 import type { PlatformCostRecord } from '@/lib/llm/cost-tracker'
@@ -213,7 +213,7 @@ export async function POST(request: Request) {
           // TypeScript 5.4: 直接从 Promise 返回数据，避免闭包赋值后 never 类型推断问题
           const pendingData = await new Promise<PendingPlatformData | null>((resolve) => {
             llmRouter.streamChat({
-              model: DEEPSEEK_MODELS.CHAT,
+              model: QWEN_MODELS.CHAT,
               messages,
               signal: abortController.signal,
               onChunk: (chunk: string) => {
@@ -246,7 +246,7 @@ export async function POST(request: Request) {
 
                   const costRecord = createPlatformCostRecord(
                     platform,
-                    DEEPSEEK_MODELS.CHAT,
+                    QWEN_MODELS.CHAT,
                     usage,
                     platformStartTime
                   )

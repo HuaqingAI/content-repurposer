@@ -7,7 +7,7 @@ export const QWEN_CONFIG = {
 } as const
 
 export const QWEN_MODELS = {
-  CHAT: 'qwen-plus',
+  CHAT: 'qwen3.5-plus',
 } as const
 
 async function parseSSEStream(
