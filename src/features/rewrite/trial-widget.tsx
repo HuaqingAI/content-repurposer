@@ -34,7 +34,11 @@ export function TrialWidget() {
   }, [])
 
   const charCount = [...text].length
-  const canStart = charCount >= MIN_CHARS && charCount <= MAX_CHARS && platform !== null && status !== 'streaming'
+  const canStart =
+    charCount >= MIN_CHARS &&
+    charCount <= MAX_CHARS &&
+    platform !== null &&
+    status !== 'streaming'
 
   async function handleStart() {
     if (!canStart || !platform) return
@@ -194,11 +198,11 @@ export function TrialWidget() {
   const showResult = streamingBody.length > 0
 
   return (
-    <div className="w-full max-w-2xl mx-auto flex flex-col gap-4">
-      {/* 文本输入 */}
-      <div className="flex flex-col gap-1">
+    <div className="w-full flex flex-col gap-0">
+      {/* 输入区 */}
+      <div className="flex flex-col gap-0 px-5 pt-5">
         <textarea
-          className="w-full min-h-[140px] rounded-xl border border-border-default bg-surface-2 px-4 py-3 text-sm text-text-primary resize-none focus:outline-none focus:border-accent transition-colors"
+          className="w-full min-h-[148px] rounded-xl border border-border-default bg-paper px-4 py-3.5 text-[13.5px] text-ink resize-none focus:outline-none focus:ring-2 focus:ring-accent/15 focus:border-accent/40 transition-all duration-150 placeholder:text-text-caption leading-relaxed"
           placeholder={`粘贴原文（${MIN_CHARS}–${MAX_CHARS} 字）`}
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -206,67 +210,108 @@ export function TrialWidget() {
           maxLength={MAX_CHARS + 200}
           aria-label="试用文本输入框"
         />
-        <span className="text-xs text-text-secondary text-right">
+        <span
+          className={[
+            'text-[11px] text-right mt-1.5 tabular-nums transition-colors duration-150',
+            charCount > MAX_CHARS
+              ? 'text-red-500'
+              : charCount >= MIN_CHARS
+                ? 'text-accent/60'
+                : 'text-text-caption',
+          ].join(' ')}
+        >
           {charCount} / {MAX_CHARS}
         </span>
       </div>
 
-      {/* 平台单选 */}
-      <div className="flex gap-2 flex-wrap">
-        {PLATFORMS.map(({ value, label }) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => setPlatform(value)}
-            disabled={status === 'streaming'}
-            className={[
-              'px-4 py-2 rounded-lg border text-sm transition-colors duration-150',
-              platform === value
-                ? 'bg-accent-light border-accent text-accent font-medium'
-                : 'bg-surface-2 border-border-default text-text-secondary hover:border-border-focus',
-              status === 'streaming' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
-            ].join(' ')}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {/* 平台选择 + 提交按钮 */}
+      <div className="flex flex-col gap-3 px-5 pb-5 pt-3">
+        {/* 平台 chips */}
+        <div className="flex gap-2 flex-wrap">
+          {PLATFORMS.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setPlatform(value)}
+              disabled={status === 'streaming'}
+              className={[
+                'px-4 py-1.5 rounded-full border text-[12.5px] font-medium transition-all duration-150',
+                platform === value
+                  ? 'bg-accent border-accent text-white shadow-sm'
+                  : 'bg-transparent border-border-default text-text-secondary hover:border-accent/35 hover:bg-accent-muted/60',
+                status === 'streaming' ? 'opacity-45 cursor-not-allowed' : 'cursor-pointer',
+              ].join(' ')}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
-      {/* 开始按钮 */}
-      <button
-        type="button"
-        onClick={handleStart}
-        disabled={!canStart}
-        className="w-full py-3 rounded-xl bg-accent text-white font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-accent-hover transition-colors"
-      >
-        {status === 'streaming' ? '改写中...' : '免费试用'}
-      </button>
+        {/* 提交按钮 */}
+        <button
+          type="button"
+          onClick={handleStart}
+          disabled={!canStart}
+          className="w-full py-3 rounded-full font-semibold text-[13px] transition-all duration-150 tracking-wide disabled:opacity-35 disabled:cursor-not-allowed bg-accent text-white hover:bg-accent-hover active:scale-[0.98] shadow-[0_1px_8px_rgba(61,107,79,0.2)] hover:shadow-[0_2px_14px_rgba(61,107,79,0.3)]"
+        >
+          {status === 'streaming' ? (
+            <span className="flex items-center justify-center gap-2">
+              <span className="inline-flex gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-white/70 animate-bounce [animation-delay:0ms]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-white/70 animate-bounce [animation-delay:120ms]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-white/70 animate-bounce [animation-delay:240ms]" />
+              </span>
+              改写中
+            </span>
+          ) : (
+            '免费试用'
+          )}
+        </button>
+      </div>
 
       {/* 错误提示 */}
       {status === 'error' && errorMessage && (
-        <p className="text-sm text-red-600 text-center">{errorMessage}</p>
+        <div className="mx-5 mb-4 px-4 py-2.5 rounded-lg bg-red-50 border border-red-100">
+          <p className="text-[12.5px] text-red-600 text-center">{errorMessage}</p>
+        </div>
       )}
 
-      {/* 结果区域 */}
+      {/* 结果区 */}
       {showResult && (
-        <div className="relative rounded-xl border border-border-default bg-white p-4 overflow-hidden">
-          <p className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">
-            {previewText}
-            {hiddenText && (
-              <span className={status === 'complete' ? 'blur-sm select-none' : ''}>{hiddenText}</span>
+        <div className="relative mx-5 mb-5 rounded-xl border border-border-default bg-white overflow-hidden">
+          {/* 结果头 */}
+          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border-default bg-paper/60">
+            <span className="w-1.5 h-1.5 rounded-full bg-accent/50" />
+            <span className="text-[11px] text-text-caption tracking-wide uppercase">
+              改写结果
+            </span>
+            {status === 'streaming' && (
+              <span className="ml-auto text-[11px] text-accent/60 animate-pulse">生成中…</span>
             )}
-          </p>
+          </div>
+
+          <div className="px-4 py-4">
+            <p className="whitespace-pre-wrap text-[13.5px] text-ink/80 leading-[1.85]">
+              {previewText}
+              {hiddenText && (
+                <span className={status === 'complete' ? 'blur-sm select-none' : ''}>
+                  {hiddenText}
+                </span>
+              )}
+            </p>
+          </div>
+
           {showBlur && (
             <>
               {/* 渐变遮罩 */}
-              <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent pointer-events-none" />
-              {/* CTA */}
-              <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-2 pb-4">
-                <p className="text-sm font-medium text-gray-800">注册免费解锁完整内容</p>
+              <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-white via-white/90 to-transparent pointer-events-none" />
+              {/* 解锁 CTA */}
+              <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-2.5 pb-5">
+                <p className="text-[12.5px] font-medium text-ink/70">注册免费解锁完整内容</p>
                 <Link
                   href="/login"
                   onClick={handleRegisterClick}
-                  className="px-6 py-2 rounded-lg bg-accent text-white font-semibold text-sm hover:bg-accent-hover transition-colors"
+                  className="inline-flex items-center gap-1.5 px-6 py-2 rounded-full bg-accent text-white font-semibold text-[12.5px] hover:bg-accent-hover transition-all duration-200 shadow-sm"
                 >
                   免费注册
                 </Link>

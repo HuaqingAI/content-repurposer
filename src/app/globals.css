@@ -2,7 +2,7 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #1a1a18;
 }
 
 @theme inline {
@@ -16,11 +16,14 @@
   --color-accent-hover: #2f5640;
   --color-accent-light: #e8f2ec;
   --color-accent-muted: #eef5f1;
-  --color-surface-2: #f9f8f5;
-  --color-border-default: #e8e5de;
+  --color-surface-2: #f4f1eb;
+  --color-border-default: #e5e0d8;
   --color-border-focus: #a0998a;
   --color-text-secondary: #6b6560;
   --color-text-caption: #a09890;
+  /* 编辑感色调 */
+  --color-paper: #faf8f4;
+  --color-ink: #1a1a18;
 }
 
 @media (prefers-color-scheme: dark) {

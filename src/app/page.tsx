@@ -15,118 +15,156 @@ const PLATFORMS = [
 ]
 
 const FEATURES = [
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-        <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5" />
-        <path d="M7 10l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-    title: '语义级改写',
-    desc: '不是句子替换，而是理解内容后重新表达，保留核心观点',
-  },
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-        <path d="M10 3v14M3 10h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M6 6l8 8M14 6l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
-      </svg>
-    ),
-    title: '零学习成本',
-    desc: '粘贴文章、选平台、复制结果，4 步完成，无需写提示词',
-  },
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-        <rect x="3" y="4" width="5" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-        <rect x="10" y="4" width="5" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-        <path d="M8 10h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-    ),
-    title: '多平台一键',
-    desc: '一次输入，同时生成三平台原生内容，告别反复改稿',
-  },
+  { num: '01', title: '语义级改写', desc: '不是句子替换，而是理解内容后重新表达，保留核心观点' },
+  { num: '02', title: '零学习成本', desc: '粘贴文章、选平台、复制结果，4 步完成，无需写提示词' },
+  { num: '03', title: '多平台一键', desc: '一次输入，同时生成三平台原生内容，告别反复改稿' },
 ]
 
 export default function HomePage() {
   return (
     <main className="min-h-screen flex flex-col">
-      {/* Hero */}
-      <section className="flex-1 flex flex-col items-center justify-center text-center px-6 py-20 bg-gradient-to-b from-accent-muted to-white">
-        {/* Badge */}
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-accent/25 text-accent text-xs font-medium mb-8 shadow-sm">
-          <span className="w-1.5 h-1.5 rounded-full bg-accent inline-block" />
-          AI 驱动 · 语义级改写
-        </span>
 
-        <h1 className="text-5xl font-bold text-gray-900 mb-3 tracking-tight">适文</h1>
-        <p className="text-2xl font-semibold text-gray-700 mb-5">
-          一篇文章{' '}
-          <span className="text-accent">→</span>
-          {' '}多平台原生内容
+      {/* ── Hero ── */}
+      <section className="relative flex flex-col items-center text-center px-6 pt-20 pb-16 bg-paper overflow-hidden">
+        {/* 绿色光晕背景 */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          aria-hidden="true"
+          style={{
+            background:
+              'radial-gradient(ellipse 70% 55% at 50% 0%, rgba(61,107,79,0.08) 0%, transparent 65%)',
+          }}
+        />
+
+        {/* 眉标 */}
+        <div className="relative flex items-center gap-2.5 mb-9">
+          <span className="h-px w-7 bg-accent/35" />
+          <span className="text-[11px] tracking-[0.22em] uppercase text-accent font-medium">
+            AI 驱动 · 语义级改写
+          </span>
+          <span className="h-px w-7 bg-accent/35" />
+        </div>
+
+        {/* 主标题 */}
+        <h1 className="relative text-[5.5rem] leading-none font-bold text-ink tracking-tight mb-4">
+          适文
+        </h1>
+
+        {/* 副标题：圆形箭头 */}
+        <p className="relative flex items-center justify-center gap-2.5 text-[1.3rem] font-medium text-ink/70 mb-4">
+          一篇文章
+          <span
+            className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-accent text-white text-[15px] font-bold flex-shrink-0 shadow-sm"
+            aria-hidden="true"
+          >
+            →
+          </span>
+          多平台原生内容
         </p>
-        <p className="text-base text-gray-500 max-w-md mb-10 leading-relaxed">
+
+        {/* 描述 */}
+        <p className="relative text-[14px] text-ink/42 max-w-[390px] mb-9 leading-[1.95] tracking-[0.01em]">
           把你的小红书文章自动改写为公众号、知乎的原生风格内容。
           <br />
           语义级重写，风格精准适配，无需手动调整。
         </p>
+
+        {/* 主 CTA */}
         <Link
           href="/login"
-          className="inline-block px-8 py-3 rounded-lg bg-accent text-white font-semibold text-base hover:bg-accent-hover transition-colors shadow-sm"
+          className="relative inline-flex items-center gap-2 px-7 py-[11px] rounded-full bg-accent text-white font-semibold text-sm hover:bg-accent-hover transition-all duration-200 shadow-[0_2px_14px_rgba(61,107,79,0.28)] hover:shadow-[0_4px_22px_rgba(61,107,79,0.38)] hover:-translate-y-px mb-11"
         >
           免费试用
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 13 13"
+            fill="none"
+            aria-hidden="true"
+            className="opacity-90"
+          >
+            <path
+              d="M1.5 6.5h10M7.5 2.5l4 4-4 4"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </Link>
-        <div className="mt-10 w-full max-w-2xl">
+
+        {/* 试用 Widget 卡片 */}
+        <div className="relative w-full max-w-2xl rounded-2xl bg-white shadow-[0_2px_32px_rgba(0,0,0,0.07),0_0_0_1px_rgba(0,0,0,0.05)] overflow-hidden">
           <TrialWidget />
         </div>
       </section>
 
-      {/* Platforms */}
+      {/* ── 支持平台 ── */}
       <section className="bg-surface-2 py-16 px-6 border-t border-border-default">
         <div className="max-w-2xl mx-auto">
-          <h2 className="text-lg font-semibold text-gray-800 mb-8 text-center">支持平台</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="flex items-center gap-3 mb-8">
+            <span className="h-px flex-1 bg-border-default" />
+            <h2 className="text-[11px] tracking-[0.22em] uppercase text-text-caption font-medium whitespace-nowrap">
+              支持平台
+            </h2>
+            <span className="h-px flex-1 bg-border-default" />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {PLATFORMS.map((p) => (
               <div
                 key={p.name}
-                className="bg-white rounded-xl border border-border-default p-5 text-center shadow-sm hover:shadow-md transition-shadow"
+                className="group bg-white rounded-xl border border-border-default px-4 py-4 flex items-start gap-3 hover:border-accent/28 hover:shadow-sm transition-all duration-200 cursor-default"
               >
                 <span
-                  className="inline-block w-2 h-2 rounded-full mb-3"
+                  className="mt-[5px] w-[7px] h-[7px] rounded-full flex-shrink-0"
                   style={{ backgroundColor: p.dot }}
                 />
-                <h3 className="font-semibold text-gray-800 mb-1">{p.name}</h3>
-                <p className="text-sm text-text-secondary">{p.desc}</p>
+                <div>
+                  <h3 className="font-semibold text-ink text-[13px] mb-0.5">{p.name}</h3>
+                  <p className="text-[12px] text-text-secondary leading-relaxed">{p.desc}</p>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Features */}
+      {/* ── 为什么选适文 ── */}
       <section className="py-16 px-6 bg-white">
         <div className="max-w-2xl mx-auto">
-          <h2 className="text-lg font-semibold text-gray-800 mb-8 text-center">为什么选适文</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+          <div className="flex items-center gap-3 mb-10">
+            <span className="h-px flex-1 bg-border-default" />
+            <h2 className="text-[11px] tracking-[0.22em] uppercase text-text-caption font-medium whitespace-nowrap">
+              为什么选适文
+            </h2>
+            <span className="h-px flex-1 bg-border-default" />
+          </div>
+
+          <div className="divide-y divide-border-default">
             {FEATURES.map((f) => (
-              <div key={f.title} className="flex flex-col gap-3">
-                <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-accent-light text-accent">
-                  {f.icon}
+              <div key={f.title} className="flex gap-5 py-6">
+                <span className="text-[11px] font-mono text-accent/38 mt-[3px] w-6 flex-shrink-0 tabular-nums">
+                  {f.num}
                 </span>
-                <h3 className="font-semibold text-gray-800">{f.title}</h3>
-                <p className="text-sm text-text-secondary leading-relaxed">{f.desc}</p>
+                <div>
+                  <h3 className="font-semibold text-ink text-[13.5px] mb-1.5">{f.title}</h3>
+                  <p className="text-[13px] text-text-secondary leading-relaxed">{f.desc}</p>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Bottom CTA */}
-      <section className="bg-surface-2 border-t border-border-default py-12 px-6 text-center">
-        <p className="text-gray-600 mb-4">立即体验 AI 驱动的多平台内容改写</p>
+      {/* ── 底部 CTA ── */}
+      <section className="bg-accent py-14 px-6 text-center">
+        <p className="text-white/65 text-[12px] tracking-[0.18em] uppercase mb-5">
+          立即体验 AI 驱动的多平台内容改写
+        </p>
         <Link
           href="/login"
-          className="inline-block px-8 py-3 rounded-lg bg-accent text-white font-semibold text-base hover:bg-accent-hover transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-white text-accent font-semibold text-sm hover:bg-accent-light transition-all duration-200 shadow-sm"
         >
           立即注册，免费体验
         </Link>
