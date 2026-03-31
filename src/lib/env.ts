@@ -12,9 +12,9 @@ const envSchema = z.object({
   // LLM API Keys（服务端）
   DEEPSEEK_API_KEY: z.string().min(1).optional(),
   QWEN_API_KEY: z.string().min(1),
-  // 微信 OAuth（服务端）
-  WECHAT_APP_ID: z.string().min(1),
-  WECHAT_APP_SECRET: z.string().min(1),
+  // 微信 OAuth（服务端，未接入时可留空）
+  WECHAT_APP_ID: z.string().min(1).optional(),
+  WECHAT_APP_SECRET: z.string().min(1).optional(),
   // 应用配置（公开）
   NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
 })

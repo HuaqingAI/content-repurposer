@@ -98,19 +98,6 @@ jobs:
             --namespace=content-repurposer \
             --dry-run=client -o yaml | kubectl apply -f -
 
-      - name: 同步应用 Secret 到 K8S
-        run: |
-          kubectl create secret generic content-repurposer-secret \
-            --namespace=content-repurposer \
-            --from-literal=DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-            --from-literal=DIRECT_URL="${{ secrets.DIRECT_URL }}" \
-            --from-literal=SUPABASE_SERVICE_ROLE_KEY="${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
-            --from-literal=DEEPSEEK_API_KEY="${{ secrets.DEEPSEEK_API_KEY }}" \
-            --from-literal=QWEN_API_KEY="${{ secrets.QWEN_API_KEY }}" \
-            --from-literal=WECHAT_APP_ID="${{ secrets.WECHAT_APP_ID }}" \
-            --from-literal=WECHAT_APP_SECRET="${{ secrets.WECHAT_APP_SECRET }}" \
-            --save-config --dry-run=client -o yaml | kubectl apply -f -
-
       - name: 应用 K8S 配置
         run: |
           kubectl apply -f k8s/namespace.yaml
@@ -120,6 +107,31 @@ jobs:
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
           kubectl apply -f k8s/ingress.yaml
+
+      - name: 同步 Secrets 到 K8S（从 GitHub Secrets 注入）
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
+        run: |
+          # 只有所有必要 Secret 都配置了才执行同步，避免覆盖为空值
+          if [ -z "$DATABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ] || [ -z "$QWEN_API_KEY" ]; then
+            echo "❌ 必要的 GitHub Secrets 未配置（DATABASE_URL / SUPABASE_SERVICE_ROLE_KEY / QWEN_API_KEY），跳过同步"
+            exit 1
+          fi
+          kubectl create secret generic content-repurposer-secret \
+            --namespace=content-repurposer \
+            --from-literal=DATABASE_URL="$DATABASE_URL" \
+            --from-literal=DIRECT_URL="$DIRECT_URL" \
+            --from-literal=SUPABASE_SERVICE_ROLE_KEY="$SUPABASE_SERVICE_ROLE_KEY" \
+            --from-literal=DEEPSEEK_API_KEY="${DEEPSEEK_API_KEY:-}" \
+            --from-literal=QWEN_API_KEY="$QWEN_API_KEY" \
+            --from-literal=WECHAT_APP_ID="${WECHAT_APP_ID:-}" \
+            --from-literal=WECHAT_APP_SECRET="${WECHAT_APP_SECRET:-}" \
+            --save-config --dry-run=client -o yaml | kubectl apply -f -
+          echo "✅ K8S Secret 已同步"
 
       - name: 等待部署完成
         run: |
