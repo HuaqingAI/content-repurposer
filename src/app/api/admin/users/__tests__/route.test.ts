@@ -2,8 +2,18 @@
  * @jest-environment node
  */
 
+// ── Mocks ─────────────────────────────────────────────────────────────────────
+
 jest.mock('@/lib/supabase/server', () => ({
   createClient: jest.fn(),
+}))
+
+jest.mock('@/lib/prisma', () => ({
+  prisma: {
+    user: {
+      findUnique: jest.fn(),
+    },
+  },
 }))
 
 jest.mock('@/features/admin/admin-service', () => ({
@@ -11,12 +21,29 @@ jest.mock('@/features/admin/admin-service', () => ({
   toggleUserBan: jest.fn(),
 }))
 
+// mock @/generated/prisma/client 的 Prisma 命名空间（PATCH 路由用于 instanceof 检查）
+jest.mock('@/generated/prisma/client', () => {
+  class PrismaClientKnownRequestError extends Error {
+    code: string
+    constructor(message: string, { code }: { code: string; clientVersion: string }) {
+      super(message)
+      this.name = 'PrismaClientKnownRequestError'
+      this.code = code
+    }
+  }
+  return { Prisma: { PrismaClientKnownRequestError } }
+})
+
+// ── Import after mocks ─────────────────────────────────────────────────────────
+
 import { GET } from '../route'
 import { PATCH } from '../[id]/route'
 import { createClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/prisma'
 import { getUserList, toggleUserBan } from '@/features/admin/admin-service'
 
 const mockCreateClient = jest.mocked(createClient)
+const mockPrismaUserFindUnique = jest.mocked(prisma.user.findUnique)
 const mockGetUserList = jest.mocked(getUserList)
 const mockToggleUserBan = jest.mocked(toggleUserBan)
 
@@ -33,7 +60,10 @@ const mockUserList = [
   },
 ]
 
-/** 构建 supabase mock 链：getUser + from().select().eq().single() */
+/**
+ * 构建 auth mock + Prisma role mock。
+ * 路由用 supabase.auth.getUser() 做身份验证，用 prisma.user.findUnique() 检查管理员角色。
+ */
 function mockSupabase(
   user: { id: string } | null,
   role: string | null,
@@ -44,18 +74,16 @@ function mockSupabase(
     data: { user },
     error: authError ? { message: 'auth error' } : null,
   })
-  const single = jest.fn().mockResolvedValue({
-    data: role ? { role } : null,
-    error: roleError ? { message: 'db error' } : null,
-  })
-  const eq = jest.fn().mockReturnValue({ single })
-  const select = jest.fn().mockReturnValue({ eq })
-  const mockFrom = jest.fn().mockReturnValue({ select })
-
   mockCreateClient.mockResolvedValue({
     auth: { getUser: mockGetUser },
-    from: mockFrom,
   } as never)
+
+  // 配置 Prisma role 查询
+  if (!user || roleError) {
+    mockPrismaUserFindUnique.mockResolvedValue(null)
+  } else {
+    mockPrismaUserFindUnique.mockResolvedValue({ role: role ?? 'user' } as never)
+  }
 }
 
 beforeEach(() => {
@@ -185,7 +213,12 @@ describe('PATCH /api/admin/users/[id]', () => {
 
   it('用户不存在返回 404', async () => {
     mockSupabase({ id: 'admin-1' }, 'admin')
-    mockToggleUserBan.mockRejectedValue({ code: 'P2025', message: 'Record not found' })
+    const { Prisma } = jest.requireMock('@/generated/prisma/client')
+    const err = new Prisma.PrismaClientKnownRequestError('Record not found', {
+      code: 'P2025',
+      clientVersion: '7.5.0',
+    })
+    mockToggleUserBan.mockRejectedValue(err)
     const req = new Request('http://localhost/api/admin/users/non-existent', {
       method: 'PATCH',
       body: JSON.stringify({ banned: true }),

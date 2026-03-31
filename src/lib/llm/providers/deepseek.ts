@@ -85,6 +85,7 @@ async function parseSSEStream(
     onError({ code: 'NETWORK_ERROR', message: '连接意外中断，请重试' })
   } catch (err) {
     if (err instanceof Error && err.name !== 'AbortError') {
+      console.error('[DeepSeekProvider] stream read error:', err.message)
       onError({ code: 'NETWORK_ERROR', message: '网络连接失败，请检查网络' })
     }
   } finally {
@@ -165,6 +166,9 @@ export class DeepSeekProvider implements LLMProvider {
       } catch {
         // 响应体非 JSON，忽略
       }
+      console.error(
+        `[DeepSeekProvider] API error status=${response.status}${errorDetail ? ` detail=${errorDetail}` : ''}`
+      )
       safeOnError({
         code: 'API_ERROR',
         message: errorDetail

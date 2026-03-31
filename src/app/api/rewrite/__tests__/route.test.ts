@@ -51,14 +51,6 @@ jest.mock('@/lib/llm/content-type-parser', () => ({
   parseContentType: jest.fn().mockReturnValue('opinion'),
 }))
 
-jest.mock('@/lib/prisma', () => ({
-  prisma: {
-    user: {
-      findUnique: jest.fn(),
-    },
-  },
-}))
-
 import { POST } from '../route'
 import { createClient } from '@/lib/supabase/server'
 import { checkRateLimit, checkIpRateLimit } from '@/lib/rate-limit'
@@ -98,6 +90,20 @@ function makeValidRequest(overrides: Record<string, unknown> = {}) {
   return new Request('http://localhost/api/rewrite', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      text: VALID_TEXT,
+      platforms: ['xiaohongshu'],
+      tone: 'standard',
+      ...overrides,
+    }),
+  })
+}
+
+/** 试用模式专用请求：携带 x-forwarded-for 以通过 IP 识别 */
+function makeTrialRequest(overrides: Record<string, unknown> = {}) {
+  return new Request('http://localhost/api/rewrite', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '1.2.3.4' },
     body: JSON.stringify({
       text: VALID_TEXT,
       platforms: ['xiaohongshu'],
@@ -383,7 +389,7 @@ describe('POST /api/rewrite', () => {
       mockCheckIpRateLimit.mockReturnValue({ allowed: true, resetAt: Date.now() + 3600000 })
       setupLlmSuccess()
 
-      const res = await POST(makeValidRequest())
+      const res = await POST(makeTrialRequest())
       expect(res.status).toBe(200)
       expect(res.headers.get('Content-Type')).toBe('text/event-stream')
     })
@@ -392,7 +398,7 @@ describe('POST /api/rewrite', () => {
       mockCheckIpRateLimit.mockReturnValue({ allowed: true, resetAt: Date.now() + 3600000 })
       setupLlmSuccess()
 
-      const res = await POST(makeValidRequest())
+      const res = await POST(makeTrialRequest())
       const events = await collectSSEEvents(res)
       const doneEvent = events.find((e) => e.event === 'done')
       expect(doneEvent).toBeDefined()
@@ -461,7 +467,7 @@ describe('POST /api/rewrite', () => {
       setupGuestUser()
       mockCheckIpRateLimit.mockReturnValue({ allowed: true, resetAt: Date.now() + 3600000 })
 
-      const res = await POST(makeValidRequest())
+      const res = await POST(makeTrialRequest())
       const events = await collectSSEEvents(res)
       const doneEvent = events.find((e) => e.event === 'done')
       expect(doneEvent).toBeDefined()

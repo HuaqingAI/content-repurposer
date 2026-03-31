@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { HistoryRecordCard } from './history-record-card'
 import { HistoryDetailModal } from './history-detail-modal'
 import { HistoryEmptyState } from './history-empty-state'
@@ -10,17 +10,37 @@ interface HistoryListProps {
   initialRecords: HistoryRecordSummary[]
   initialTotal: number
   pageSize: number
+  /** 如果为 true，则在组件挂载后通过 API 加载第一页数据（无需 SSR 预取） */
+  fetchOnMount?: boolean
 }
 
-export function HistoryList({ initialRecords, initialTotal, pageSize }: HistoryListProps) {
+export function HistoryList({ initialRecords, initialTotal, pageSize, fetchOnMount }: HistoryListProps) {
   const [records, setRecords] = useState<HistoryRecordSummary[]>(initialRecords)
   const [total, setTotal] = useState(initialTotal)
   const [page, setPage] = useState(1)
   const [loadingMore, setLoadingMore] = useState(false)
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [initializing, setInitializing] = useState(!!fetchOnMount)
   // ref 防止快速双击在 React 状态更新前并发触发
   const loadingRef = useRef(false)
+
+  useEffect(() => {
+    if (!fetchOnMount) return
+    fetch('/api/rewrite/history?page=1')
+      .then((r) => r.json())
+      .then((body) => {
+        if (body.data) {
+          setRecords(body.data.records ?? [])
+          setTotal(body.data.total ?? 0)
+        }
+      })
+      .catch(() => {
+        // 加载失败时保持空状态
+      })
+      .finally(() => setInitializing(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const hasMore = records.length < total
 
@@ -51,6 +71,8 @@ export function HistoryList({ initialRecords, initialTotal, pageSize }: HistoryL
       setLoadingMore(false)
     }
   }
+
+  if (initializing) return null
 
   if (records.length === 0 && total === 0) {
     return <HistoryEmptyState />

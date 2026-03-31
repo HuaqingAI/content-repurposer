@@ -198,6 +198,7 @@ export async function POST(request: Request) {
               originalText,
             })
           } catch (err) {
+            console.error(`[rewrite] assemblePrompt failed platform=${platform}:`, err)
             send('error', {
               message: err instanceof Error ? err.message : '平台配置异常，请联系管理员',
               retryable: false,
@@ -274,6 +275,10 @@ export async function POST(request: Request) {
                 // fatalError 为 true 时也不发 retryable error，避免与已发出的 error 事件冲突
                 if (error.code !== 'CANCELLED' && !fatalError) {
                   fatalError = true
+                  console.error(
+                    `[rewrite] LLM error platform=${platform} code=${error.code} status=${error.statusCode ?? '-'}:`,
+                    error.message
+                  )
                   send('error', { message: error.message, retryable: true })
                 }
                 resolve(null)
@@ -359,6 +364,7 @@ export async function POST(request: Request) {
           send('done', { record_id: rewriteRecord?.id ?? null })
         }
       } catch (err) {
+        console.error('[rewrite] unexpected error in stream handler:', err)
         send('error', {
           message: err instanceof Error ? err.message : '改写服务异常，请稍后再试',
           retryable: true,

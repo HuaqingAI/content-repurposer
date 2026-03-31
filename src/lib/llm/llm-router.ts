@@ -25,14 +25,20 @@ export class LLMRouter implements LLMProvider {
 
         // 丢弃 primary 已缓冲的 chunks，切换到 fallback 从头生成
         primaryChunkBuffer.length = 0
+        console.warn(
+          `[LLMRouter] primary failed (code=${error.code} status=${error.statusCode ?? '-'}), switching to fallback: ${error.message}`
+        )
 
         // 静默切换到 fallback，替换 model 为 fallback 的 model
         void this.fallback
           .streamChat({
             ...params,
             model: QWEN_MODELS.CHAT,
-            onError: () => {
+            onError: (fallbackError) => {
               // P2: 强制覆盖 code 为 API_ERROR，不透传 fallback 的原始 code
+              console.error(
+                `[LLMRouter] fallback also failed (code=${fallbackError.code} status=${fallbackError.statusCode ?? '-'}): ${fallbackError.message}`
+              )
               onError({ code: 'API_ERROR', message: '两个 LLM 提供商均不可用，请稍后重试' })
               resolve()
             },
@@ -41,8 +47,9 @@ export class LLMRouter implements LLMProvider {
               resolve()
             },
           })
-          .catch(() => {
+          .catch((err: unknown) => {
             // P1: .catch() 分支同样使用 API_ERROR
+            console.error('[LLMRouter] fallback threw exception:', err)
             onError({ code: 'API_ERROR', message: '两个 LLM 提供商均不可用，请稍后重试' })
             resolve()
           })
@@ -62,8 +69,9 @@ export class LLMRouter implements LLMProvider {
             resolve()
           },
         })
-        .catch(() => {
+        .catch((err: unknown) => {
           // P3: primary 抛出异常时也走 fallback 路径，而非直接透传错误
+          console.warn('[LLMRouter] primary threw exception, switching to fallback:', err)
           primaryOnError({ code: 'NETWORK_ERROR', message: 'primary failed' })
         })
     })
