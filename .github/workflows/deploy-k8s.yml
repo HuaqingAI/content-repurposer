@@ -111,10 +111,19 @@ jobs:
             --timeout=120s
           echo "部署成功！"
 
+      - name: 部署失败时诊断
+        if: failure()
+        run: |
+          echo "=== Pod 状态 ==="
+          kubectl get pods -n content-repurposer
+          echo "=== Pod 详情 ==="
+          kubectl describe pods -n content-repurposer
+          echo "=== Pod 日志 ==="
+          kubectl logs -n content-repurposer -l app=content-repurposer --tail=50 || true
+
       - name: 部署失败时回滚
         if: failure()
         run: |
           echo "部署失败，执行回滚..."
           kubectl rollout undo deployment/content-repurposer \
-            --namespace=content-repurposer
-          echo "已回滚到上一个版本"
+            --namespace=content-repurposer || echo "无历史版本可回滚"
