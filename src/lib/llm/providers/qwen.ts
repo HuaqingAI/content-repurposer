@@ -2,7 +2,7 @@ import { env } from '@/lib/env'
 import type { LLMProvider, StreamChatParams, TokenUsage, LLMError } from '@/lib/llm/types'
 
 export const QWEN_CONFIG = {
-  baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+  baseUrl: 'https://coding.dashscope.aliyuncs.com/v1',
   timeoutMs: 30000,
 } as const
 

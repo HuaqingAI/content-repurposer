@@ -1,6 +1,7 @@
 import type { LLMProvider, StreamChatParams, LLMError } from '@/lib/llm/types'
 import { deepseekProvider } from '@/lib/llm/providers/deepseek'
-import { qwenProvider, QWEN_MODELS } from '@/lib/llm/providers/qwen'
+import { qwenProvider } from '@/lib/llm/providers/qwen'
+import { DEEPSEEK_MODELS } from '@/lib/llm/types'
 
 export class LLMRouter implements LLMProvider {
   constructor(
@@ -33,7 +34,7 @@ export class LLMRouter implements LLMProvider {
         void this.fallback
           .streamChat({
             ...params,
-            model: QWEN_MODELS.CHAT,
+            model: DEEPSEEK_MODELS.CHAT,
             onError: (fallbackError) => {
               // P2: 强制覆盖 code 为 API_ERROR，不透传 fallback 的原始 code
               console.error(
@@ -78,4 +79,4 @@ export class LLMRouter implements LLMProvider {
   }
 }
 
-export const llmRouter = new LLMRouter(deepseekProvider, qwenProvider)
+export const llmRouter = new LLMRouter(qwenProvider, deepseekProvider)

@@ -95,13 +95,17 @@ async function parseSSEStream(
 }
 
 export class DeepSeekProvider implements LLMProvider {
-  private readonly apiKey: string
+  private readonly apiKey: string | undefined
 
   constructor() {
     this.apiKey = env.DEEPSEEK_API_KEY
   }
 
   async streamChat(params: StreamChatParams): Promise<void> {
+    if (!this.apiKey) {
+      params.onError({ code: 'API_ERROR', message: 'DeepSeek API Key 未配置' })
+      return
+    }
     const { model, messages, onChunk, onComplete, onError, signal } = params
     const controller = new AbortController()
     let completed = false

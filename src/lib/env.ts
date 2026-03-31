@@ -10,7 +10,7 @@ const envSchema = z.object({
   // 数据库（服务端）
   DATABASE_URL: z.string().url(),
   // LLM API Keys（服务端）
-  DEEPSEEK_API_KEY: z.string().min(1),
+  DEEPSEEK_API_KEY: z.string().min(1).optional(),
   QWEN_API_KEY: z.string().min(1),
   // 微信 OAuth（服务端）
   WECHAT_APP_ID: z.string().min(1),
