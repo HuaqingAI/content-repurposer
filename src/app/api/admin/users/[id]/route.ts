@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { UserRole } from '@/generated/prisma/enums'
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
+import { PrismaClientKnownRequestError } from '@/generated/prisma/runtime/library'
 import { toggleUserBan } from '@/features/admin/admin-service'
 
 export async function PATCH(
