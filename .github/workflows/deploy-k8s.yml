@@ -83,6 +83,15 @@ jobs:
           printf '%s' "$KUBECONFIG_CONTENT" > ~/.kube/config
           chmod 600 ~/.kube/config
 
+      - name: 执行数据库迁移
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: |
+          npm ci --prefer-offline 2>/dev/null || npm ci
+          npx prisma generate
+          DATABASE_URL="$DIRECT_URL" npx prisma migrate deploy
+          echo "✅ 数据库迁移完成"
+
       - name: 替换镜像 Tag
         run: |
           IMAGE="${{ env.ACR_REGISTRY }}/${{ env.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.image-tag }}"
