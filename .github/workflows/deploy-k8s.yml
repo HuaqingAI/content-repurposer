@@ -76,7 +76,7 @@ jobs:
       - name: 配置 kubectl（KubeConfig）
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG_DATA }}" | base64 -d > ~/.kube/config
+          printf '%s' "${{ secrets.KUBECONFIG_DATA }}" | base64 --decode --ignore-garbage > ~/.kube/config
           chmod 600 ~/.kube/config
 
       - name: 替换镜像 Tag
