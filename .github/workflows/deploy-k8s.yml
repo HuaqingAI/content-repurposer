@@ -89,7 +89,7 @@ jobs:
         run: |
           npm ci --prefer-offline 2>/dev/null || npm ci
           npx prisma generate
-          DATABASE_URL="$DIRECT_URL" npx prisma migrate deploy
+          npx prisma db execute --file prisma/migrations/20260331000001_add_missing_columns/migration.sql --url "$DIRECT_URL"
           echo "✅ 数据库迁移完成"
 
       - name: 替换镜像 Tag
