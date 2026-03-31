@@ -20,9 +20,8 @@ jest.mock('@/features/admin/admin-service', () => ({
   toggleUserBan: jest.fn(),
 }))
 
-// PrismaClientKnownRequestError 来自 prisma runtime，jest 环境下需要 virtual mock
-// 注意：jest.mock factory 会被提升，class 必须定义在 factory 内部
-jest.mock('@/generated/prisma/runtime/library', () => {
+// mock @/generated/prisma/client 的 Prisma 命名空间
+jest.mock('@/generated/prisma/client', () => {
   class PrismaClientKnownRequestError extends Error {
     code: string
     constructor(message: string, { code }: { code: string; clientVersion: string }) {
@@ -31,8 +30,8 @@ jest.mock('@/generated/prisma/runtime/library', () => {
       this.code = code
     }
   }
-  return { PrismaClientKnownRequestError }
-}, { virtual: true })
+  return { Prisma: { PrismaClientKnownRequestError } }
+})
 
 // ── Import after mocks ─────────────────────────────────────────────────────────
 
@@ -178,7 +177,7 @@ describe('PATCH /api/admin/users/[id]', () => {
 
   it('用户不存在（Prisma P2025）→ 404', async () => {
     setupAdminUser()
-    const { PrismaClientKnownRequestError: MockPrismaError } = jest.requireMock('@/generated/prisma/runtime/library') as { PrismaClientKnownRequestError: new (msg: string, opts: { code: string; clientVersion: string }) => Error & { code: string } }
+    const { Prisma: { PrismaClientKnownRequestError: MockPrismaError } } = jest.requireMock('@/generated/prisma/client') as { Prisma: { PrismaClientKnownRequestError: new (msg: string, opts: { code: string; clientVersion: string }) => Error & { code: string } } }
     const prismaError = new MockPrismaError('Record not found', {
       code: 'P2025',
       clientVersion: '7.0.0',

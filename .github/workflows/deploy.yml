@@ -33,6 +33,12 @@ jobs:
           DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
           NEXT_PUBLIC_SUPABASE_URL: "https://dummy.supabase.co"
           NEXT_PUBLIC_SUPABASE_ANON_KEY: "dummy"
+          SUPABASE_SERVICE_ROLE_KEY: "dummy"
+          DEEPSEEK_API_KEY: "dummy"
+          QWEN_API_KEY: "dummy"
+          WECHAT_APP_ID: "dummy"
+          WECHAT_APP_SECRET: "dummy"
+          NEXT_PUBLIC_APP_URL: "http://localhost:3000"
 
       - name: Deploy to ECS
         uses: appleboy/ssh-action@v1

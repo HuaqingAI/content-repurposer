@@ -54,6 +54,15 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             NEXT_TELEMETRY_DISABLED=1
+            NEXT_PUBLIC_SUPABASE_URL=https://dummy.supabase.co
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=dummy
+            SUPABASE_SERVICE_ROLE_KEY=dummy
+            DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy
+            DEEPSEEK_API_KEY=dummy
+            QWEN_API_KEY=dummy
+            WECHAT_APP_ID=dummy
+            WECHAT_APP_SECRET=dummy
+            NEXT_PUBLIC_APP_URL=http://localhost:3000
 
   deploy:
     name: 部署到 ACK

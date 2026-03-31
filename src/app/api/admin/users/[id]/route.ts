@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { UserRole } from '@/generated/prisma/enums'
-import { PrismaClientKnownRequestError } from '@/generated/prisma/runtime/library'
+import { Prisma } from '@/generated/prisma/client'
 import { toggleUserBan } from '@/features/admin/admin-service'
 
 export async function PATCH(
@@ -73,7 +73,7 @@ export async function PATCH(
     return Response.json({ data: result, error: null })
   } catch (err: unknown) {
     // Prisma P2025：记录不存在
-    if (err instanceof PrismaClientKnownRequestError && err.code === 'P2025') {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
       return Response.json(
         { data: null, error: { code: 'NOT_FOUND', message: '用户不存在' } },
         { status: 404 }
