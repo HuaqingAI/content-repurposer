@@ -1,6 +1,9 @@
 import 'server-only'
 import { z } from 'zod'
 
+// 空字符串视为未配置，转为 undefined
+const optionalStr = z.preprocess((v) => (v === '' ? undefined : v), z.string().min(1).optional())
+
 const envSchema = z.object({
   // Supabase（公开）
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
@@ -10,11 +13,11 @@ const envSchema = z.object({
   // 数据库（服务端）
   DATABASE_URL: z.string().url(),
   // LLM API Keys（服务端）
-  DEEPSEEK_API_KEY: z.string().min(1).optional(),
+  DEEPSEEK_API_KEY: optionalStr,
   QWEN_API_KEY: z.string().min(1),
   // 微信 OAuth（服务端，未接入时可留空）
-  WECHAT_APP_ID: z.string().min(1).optional(),
-  WECHAT_APP_SECRET: z.string().min(1).optional(),
+  WECHAT_APP_ID: optionalStr,
+  WECHAT_APP_SECRET: optionalStr,
   // 应用配置（公开）
   NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
 })
