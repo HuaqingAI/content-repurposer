@@ -25,7 +25,9 @@ jobs:
         run: npm ci
 
       - name: Build validation
-        run: npm run build
+        run: |
+          npx prisma generate
+          npm run build
         env:
           NEXT_TELEMETRY_DISABLED: 1
           DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
