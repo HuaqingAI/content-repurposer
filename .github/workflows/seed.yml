@@ -1,0 +1,19 @@
+name: Run Database Seed
+
+on:
+  workflow_dispatch:
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Run seed in production container
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.ECS_HOST }}
+          username: ${{ secrets.ECS_USER }}
+          key: ${{ secrets.ECS_SSH_KEY }}
+          script: |
+            cd ~/content-repurposer
+            docker compose -f docker-compose.prod.yml exec -T app npx prisma db seed
