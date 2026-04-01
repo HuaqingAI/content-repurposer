@@ -94,7 +94,7 @@ export function TextInput({ value, onChange, disabled = false }: TextInputProps)
           placeholder="将文章内容粘贴到这里..."
           rows={6}
           className={[
-            'relative w-full resize-none rounded-xl px-4 py-3.5 text-[13.5px] leading-[1.7]',
+            'relative w-full resize-none rounded-xl px-4 py-3.5 text-[13.5px] leading-[1.7] text-text-primary placeholder:text-text-caption',
             'border transition-all duration-150 font-[inherit]',
             'focus:outline-none focus:ring-2',
             isOver
