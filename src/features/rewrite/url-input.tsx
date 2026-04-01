@@ -51,7 +51,7 @@ export function UrlInput({ onExtracted, onError, disabled = false }: UrlInputPro
           onChange={(e) => setUrl(e.target.value)}
           placeholder="粘贴公众号/知乎/小红书文章链接..."
           disabled={disabled || loading}
-          className="flex-1 rounded-lg border border-border-default bg-surface-2 px-3 py-2.5 text-[13.5px] text-text-primary placeholder:text-text-caption focus:outline-none focus:border-border-focus disabled:opacity-50"
+          className="flex-1 rounded-lg border border-border-default bg-surface-2 px-3 py-2.5 text-[13.5px] text-ink placeholder:text-text-caption focus:outline-none focus:border-border-focus disabled:opacity-50"
         />
         <button
           type="button"
