@@ -56,8 +56,8 @@ export async function POST(request: Request) {
     )
   }
 
-  // 5. 提取内容（服务端 10 秒熔断）
-  const result = await extractUrl(url.trim(), AbortSignal.timeout(10_000))
+  // 5. 提取内容（服务端 15 秒熔断，给 Jina + fallback 留足时间）
+  const result = await extractUrl(url.trim(), AbortSignal.timeout(15_000))
 
   if (result.success) {
     return Response.json({ data: { text: result.text, success: true }, error: null })

@@ -2,6 +2,24 @@
 
 import { useState } from 'react'
 
+function getErrorMessage(url: string): string {
+  try {
+    const { hostname } = new URL(url)
+    if (hostname === 'mp.weixin.qq.com') {
+      return '微信文章有防爬保护，请在文章页全选正文后复制，再切换到「粘贴全文」标签粘贴'
+    }
+    if (hostname === 'www.xiaohongshu.com' || hostname === 'xiaohongshu.com' || hostname === 'xhslink.com') {
+      return '小红书笔记需要登录才能访问，请手动复制正文内容后粘贴'
+    }
+    if (hostname === 'zhuanlan.zhihu.com' || hostname === 'www.zhihu.com') {
+      return '无法提取知乎文章，请手动复制正文内容后粘贴'
+    }
+  } catch {
+    // 非法 URL，走默认提示
+  }
+  return '无法自动提取该链接的内容，请手动复制文章文本后粘贴'
+}
+
 interface UrlInputProps {
   onExtracted: (text: string) => void
   onError: (message?: string) => void
@@ -22,19 +40,19 @@ export function UrlInput({ onExtracted, onError, disabled = false }: UrlInputPro
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: url.trim() }),
-        signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.timeout(15_000),
       })
       const json = await res.json()
       if (json.data?.success && json.data?.text) {
         onExtracted(json.data.text)
       } else {
-        const msg = '无法自动提取该链接的内容，请手动复制文章文本后粘贴'
+        const msg = getErrorMessage(url.trim())
         setError(msg)
         onError(msg)
       }
     } catch {
       // 超时 (AbortError) 或网络错误
-      const msg = '无法自动提取该链接的内容，请手动复制文章文本后粘贴'
+      const msg = getErrorMessage(url.trim())
       setError(msg)
       onError(msg)
     } finally {
